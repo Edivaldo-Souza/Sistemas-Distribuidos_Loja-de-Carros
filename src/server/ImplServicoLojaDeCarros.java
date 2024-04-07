@@ -13,19 +13,39 @@ import java.util.Collections;
 import java.util.List;
 
 import interfaces.BancoDeDados;
+import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Categorias;
 import model.Veiculo;
 
 public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
-	private List<Veiculo> database;
+	private static int usedPort;
 	
 	@Override
 	public Veiculo adicionar(Veiculo v) throws RemoteException {
 		BancoDeDados stub;
 		try {
-			stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
-			return stub.add(v);
+			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
+			
+			BancoDeDados rep2;
+			BancoDeDados rep3;
+			if(usedPort==2001) {
+				rep2 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+				rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+			}
+			else if(usedPort==2002) {
+				rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+				rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+			}
+			else {
+				rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+				rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+			}
+			
+			Veiculo nv = stub.add(v);
+			rep2.add(v);
+			rep3.add(v);
+			return nv;
 		} catch (MalformedURLException | RemoteException | NotBoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -36,7 +56,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	public List<Veiculo> buscar(String renavam) throws RemoteException {
 		BancoDeDados stub;
 		try {
-			stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
 			List<Veiculo> resultado = new ArrayList<Veiculo>();
 			for(Veiculo c : database) {
@@ -56,7 +76,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	public List<Veiculo> listar(String categoria) throws RemoteException {
 		List<Veiculo> resultado = new ArrayList<Veiculo>();
 		try {
-			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			if(categoria.equals("ECONOMICO")) {
 				for(Veiculo v : stub.get()) {
 					if(v.getCategoria()==Categorias.ECONOMICO) resultado.add(v);
@@ -88,13 +108,32 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	@Override
 	public Veiculo atualizar(String renavam, Veiculo v) throws RemoteException {
 		try {
-			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(renavam)) {
 					v.setRenavam(renavam);
 					v.setDisponivel(database.get(i).isDisponivel());
-					return stub.update(v, i);
+					
+					BancoDeDados rep2;
+					BancoDeDados rep3;
+					if(usedPort==2001) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else if(usedPort==2002) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+					}
+					
+					Veiculo nv = stub.update(v, i);
+					rep2.update(nv, i);
+					rep3.update(nv, i);
+					return nv;
 				}
 			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
@@ -107,11 +146,28 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	@Override
 	public boolean deletar(String v) throws RemoteException {
 		try {
-			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v)) {
+					BancoDeDados rep2;
+					BancoDeDados rep3;
+					if(usedPort==2001) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else if(usedPort==2002) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+					}
+					
 					stub.delete(i);
+					rep2.delete(i);
+					rep3.delete(i);
 					return true;
 				}
 			}
@@ -125,12 +181,30 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	@Override
 	public boolean comprar(String v) throws RemoteException {
 		try {
-			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v) && database.get(i).isDisponivel()) {
 					database.get(i).setDisponivel(false);
+					
+					BancoDeDados rep2;
+					BancoDeDados rep3;
+					if(usedPort==2001) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else if(usedPort==2002) {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2003/BancoDeDados");
+					}
+					else {
+						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
+					}
+					
 					stub.update(database.get(i), i);
+					rep2.update(database.get(i), i);
+					rep3.update(database.get(i), i);
 					return true;
 				}
 			}
@@ -145,7 +219,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		
 		BancoDeDados stub;
 		try {
-			stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
+			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
 			return database.size();
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
@@ -159,20 +233,31 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	public static void main(String[] args) {
 		
 		try {
+			ReverseProxy stub = (ReverseProxy) Naming.lookup("//localhost:2000/ReverseProxy");
+			
 			ImplServicoLojaDeCarros objRemoto = new ImplServicoLojaDeCarros();
 			ImplBancoDeDados objRemotoBD = new ImplBancoDeDados();
-			ServicoLojaDeCarros skeleton = (ServicoLojaDeCarros) UnicastRemoteObject.exportObject(objRemoto, 0);
-			BancoDeDados skeletonBD = (BancoDeDados) UnicastRemoteObject.exportObject(objRemotoBD, 2);
 			
-			LocateRegistry.createRegistry(ImplReverseProxy.servicePort);
-			Registry reg = LocateRegistry.getRegistry(ImplReverseProxy.servicePort);
+			System.out.println("Porta do servico: "+stub.getServicePort());
+			
+			ServicoLojaDeCarros skeleton = 
+					(ServicoLojaDeCarros) UnicastRemoteObject.exportObject
+					(objRemoto, stub.getIndividualPort());
+			stub.setIndividualPort(stub.getIndividualPort()+1);
+			
+			BancoDeDados skeletonBD = 
+					(BancoDeDados) UnicastRemoteObject.exportObject
+					(objRemotoBD, stub.getIndividualPort());
+			stub.setIndividualPort(stub.getIndividualPort()+1);
+			
+			
+			LocateRegistry.createRegistry(stub.getServicePort());
+			Registry reg = LocateRegistry.getRegistry(stub.getServicePort());
 			reg.bind("ServicoLojaDeCarros", skeleton);
 			reg.bind("BancoDeDados",skeletonBD);
 			
-			
-			//stub = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
-			
-			//ImplReverseProxy.servicePort++;
+			usedPort = stub.getServicePort();
+			stub.setServicePort(stub.getServicePort()+1);
 
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
@@ -181,6 +266,12 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		
-	}
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 }
 }

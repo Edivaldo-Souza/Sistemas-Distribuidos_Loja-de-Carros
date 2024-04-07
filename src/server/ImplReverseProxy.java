@@ -23,8 +23,9 @@ import model.TipoDeUsuario;
 import model.Veiculo;
 
 public class ImplReverseProxy implements ReverseProxy{
-	public static int servicePort = 2001;
-	public static int databasePort = 3001;
+	public int servicePort = 2001;
+	public static int requestPort = 2001;
+	public int individualsPorts = 2;
 	
 	public ImplReverseProxy() {
 		
@@ -47,8 +48,9 @@ public class ImplReverseProxy implements ReverseProxy{
 	public Veiculo adicionar(Veiculo v) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:2001/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
 			
+			swapPort();
 			stub.adicionar(v);
 			
 		} catch (MalformedURLException e) {
@@ -68,7 +70,9 @@ public class ImplReverseProxy implements ReverseProxy{
 	public List<Veiculo> buscar(String renavam) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			
+			swapPort();
 			return stub.buscar(renavam);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
@@ -82,7 +86,8 @@ public class ImplReverseProxy implements ReverseProxy{
 	public List<Veiculo> listar(String categoria) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			swapPort();
 			return stub.listar(categoria);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
@@ -95,7 +100,8 @@ public class ImplReverseProxy implements ReverseProxy{
 	public Veiculo atualizar(String renavam, Veiculo v) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			swapPort();
 			return stub.atualizar(renavam, v);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
@@ -108,7 +114,8 @@ public class ImplReverseProxy implements ReverseProxy{
 	public boolean deletar(String v) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			swapPort();
 			return stub.deletar(v);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
@@ -121,7 +128,8 @@ public class ImplReverseProxy implements ReverseProxy{
 	public boolean comprar(String v) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			swapPort();
 			return stub.comprar(v);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
@@ -134,13 +142,21 @@ public class ImplReverseProxy implements ReverseProxy{
 	public int getQuantidade() throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+ImplReverseProxy.servicePort+"/ServicoLojaDeCarros");
+					Naming.lookup("//localhost:"+ImplReverseProxy.requestPort+"/ServicoLojaDeCarros");
+			swapPort();
 			return stub.getQuantidade();
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return 0;
+	}
+	
+	private void swapPort() {
+		if(ImplReverseProxy.requestPort+1>2003) {
+			ImplReverseProxy.requestPort = 2001;
+		}
+		else ImplReverseProxy.requestPort++;
 	}
 	
 	public static void main(String[] args) {
@@ -173,6 +189,27 @@ public class ImplReverseProxy implements ReverseProxy{
 			System.err.println("Servidor: " + e.toString());
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public int getIndividualPort() throws RemoteException {
+		return this.individualsPorts;
+	}
+
+	@Override
+	public int getServicePort() throws RemoteException {
+		
+		return this.servicePort;
+	}
+
+	@Override
+	public void setIndividualPort(int port) throws RemoteException {
+		this.individualsPorts = port;
+	}
+
+	@Override
+	public void setServicePort(int port) throws RemoteException {
+		this.servicePort = port;
 	}
 	
 }

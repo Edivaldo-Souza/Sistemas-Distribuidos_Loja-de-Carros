@@ -11,4 +11,5 @@ public interface BancoDeDados extends Remote{
 	Veiculo update(Veiculo v, int index) throws RemoteException;
 	void delete(int index) throws RemoteException;
 	List<Veiculo> get() throws RemoteException;
+	void setBD(List<Veiculo> lista) throws RemoteException;
 }

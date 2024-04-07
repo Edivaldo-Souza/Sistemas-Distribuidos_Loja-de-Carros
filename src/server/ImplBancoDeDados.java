@@ -36,4 +36,8 @@ public class ImplBancoDeDados implements BancoDeDados{
 		return database;
 	}
 
+	@Override
+	public void setBD(List<Veiculo> lista) throws RemoteException {
+		ImplBancoDeDados.database = lista;
+	}
 }

@@ -16,4 +16,8 @@ public interface ReverseProxy extends Remote{
 	boolean deletar(String v) throws RemoteException;
 	boolean comprar(String v) throws RemoteException;
 	int getQuantidade() throws RemoteException;
+	int getIndividualPort() throws RemoteException;
+	int getServicePort() throws RemoteException;
+	void setIndividualPort(int port) throws RemoteException;
+	void setServicePort(int port) throws RemoteException;
 }
