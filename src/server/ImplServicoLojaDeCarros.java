@@ -257,6 +257,10 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			reg.bind("BancoDeDados",skeletonBD);
 			
 			usedPort = stub.getServicePort();
+			/*if(usedPort==2002) {
+				Thread.sleep(10000);
+			}*/
+			
 			stub.setServicePort(stub.getServicePort()+1);
 
 		} catch (RemoteException e) {

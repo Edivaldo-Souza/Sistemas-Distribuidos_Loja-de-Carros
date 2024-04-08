@@ -22,10 +22,13 @@ public class Cliente {
 		int toMainMenu, cont;
 		Credenciais currentUser;
 		List<Veiculo> resultado;
+		int usedPort;
 		
 		try {
 			Registry registro = LocateRegistry.getRegistry(host, 2000);
 			ReverseProxy stub = (ReverseProxy) registro.lookup("ReverseProxy");
+			usedPort = stub.getClientPort();
+			stub.setClientPort(usedPort+1);
 			
 			while(keepRunning) {
 				keepLogged = true;
@@ -58,13 +61,13 @@ public class Cliente {
 						int num = Integer.parseInt(option);
 						switch(num) {
 						case 1:
-							reply = stub.adicionar(adicionarVeiculo()).toString();
+							reply = stub.adicionar(adicionarVeiculo(),usedPort).toString();
 							System.out.println(reply);
 							break;
 						case 2:
 							temp = buscarVeiculo();
 							cont = 0;
-							for(Veiculo c: stub.buscar(temp)) {
+							for(Veiculo c: stub.buscar(temp,usedPort)) {
 								cont++;
 								System.out.println(c.toString());
 							}
@@ -75,7 +78,7 @@ public class Cliente {
 						case 3:
 							temp = listarVeiculos();
 							if(temp!=null) {
-								for(Veiculo v : stub.listar(temp)) {
+								for(Veiculo v : stub.listar(temp,usedPort)) {
 									System.out.println(v.toString());
 								}
 							}
@@ -86,7 +89,7 @@ public class Cliente {
 							temp = s.nextLine();
 
 							Veiculo v = alterarVeiculo();
-							Veiculo novoVec = stub.atualizar(temp, v);
+							Veiculo novoVec = stub.atualizar(temp, v,usedPort);
 							if(novoVec!=null) {
 								System.out.println(novoVec.toString());
 							}
@@ -99,7 +102,7 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp);
+							resultado = stub.buscar(temp,usedPort);
 							for(Veiculo c: resultado) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -111,7 +114,7 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.deletar(temp)) {
+								if(stub.deletar(temp,usedPort)) {
 									System.out.println("Removido com sucesso");
 								}
 								else System.out.println("Veiculo nao disponivel");
@@ -124,7 +127,7 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp);
+							resultado = stub.buscar(temp,usedPort);
 							for(Veiculo c: resultado) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -136,7 +139,7 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.comprar(temp)) {
+								if(stub.comprar(temp,usedPort)) {
 									System.out.println("Compra realizada!");
 								}
 								else System.out.println("Veiculo nao encontrado");
@@ -144,7 +147,7 @@ public class Cliente {
 							break;
 
 						case 7:
-							System.out.println("Total de veiculos: "+stub.getQuantidade());
+							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
 							break;
 						case 8:
 							keepLogged = false;
@@ -177,7 +180,7 @@ public class Cliente {
 						case 1:
 							temp = buscarVeiculo();
 							cont = 0;
-							for(Veiculo c: stub.buscar(temp)) {
+							for(Veiculo c: stub.buscar(temp,usedPort)) {
 								cont++;
 								System.out.println(c.toString());
 							}
@@ -188,7 +191,7 @@ public class Cliente {
 						case 2:
 							temp = listarVeiculos();
 							if(temp!=null) {
-								for(Veiculo v : stub.listar(temp)) {
+								for(Veiculo v : stub.listar(temp,usedPort)) {
 									System.out.println(v.toString());
 								}
 							}
@@ -200,7 +203,7 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp);
+							resultado = stub.buscar(temp,usedPort);
 							for(Veiculo c: resultado) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -212,7 +215,7 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.comprar(temp)) {
+								if(stub.comprar(temp,usedPort)) {
 									System.out.println("Compra realizada!");
 								}
 								else System.out.println("Veiculo nao encontrado");
@@ -220,7 +223,7 @@ public class Cliente {
 							break;
 
 						case 4:
-							System.out.println("Total de veiculos: "+stub.getQuantidade());
+							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
 							break;
 						case 5:
 							keepLogged = false;
