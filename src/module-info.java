@@ -9,5 +9,6 @@ module praticaOffline03_SD {
 	exports server;
 	exports interfaces;
 	requires java.rmi;
-	exports cripto;
+    requires jdk.jdi;
+    exports cripto;
 }

@@ -9,7 +9,7 @@ import cripto.DadoCifrado;
 import model.Credenciais;
 
 public interface Autenticador extends Remote {
-	int autenticar(Credenciais c) throws RemoteException;
+	byte[] autenticar(byte[] c) throws RemoteException;
 	Chave trocaDeChavesRsa(Chave publicKey) throws  RemoteException;
 	byte[] requisitarChaveAes() throws RemoteException, IOException;
 	byte[] requisitarChaveHmac() throws IOException;

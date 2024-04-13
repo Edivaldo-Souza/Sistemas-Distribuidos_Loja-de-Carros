@@ -50,13 +50,13 @@ public class Cliente {
 				if(currentUser==null) {
 					break;
 				}
-				toMainMenu = stub.autenticar(currentUser); // aqui eu tenho que criptografar
+				byte[] authResponse = stub.autenticar(criptoAuth.criptografar(new Mensagem(currentUser,
+						criptoAuth.assinarHash(criptoAuth.hMac(currentUser))))); // aqui eu tenho que criptografar
+				toMainMenu = (int) handleResponse(authResponse, criptoLoja);
+
 				// agora tem que trocar chaves com o serviço da loja
 				criptoLoja.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaLoja(criptoLoja.rsa.getPublicKey(), usedPort));
-				System.out.println(criptoLoja.rsa.getPublicKey().valorDaChave + " : modulo " +
-						criptoLoja.rsa.getPublicKey().modulo);
-				System.out.println(criptoLoja.rsa.getPublicKeyExterna().valorDaChave + " : modulo " +
-						criptoLoja.rsa.getPublicKeyExterna().modulo);
+
 				// em seguida, recebe a chave aes do serviço de autenticação
 				chaveCifradaBase64 = stub.requisitarChaveAesLoja(usedPort);
 				chaveCifrada = DadoCifrado.deserializar(Base64.decodificar(chaveCifradaBase64));
@@ -93,9 +93,7 @@ public class Cliente {
 							Mensagem msg = new Mensagem(added, criptoLoja.assinarHash(criptoLoja.hMac(added)),
 									usedPort); // dado, hashAssinado, porta da réplica
 							reply = stub.adicionar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda,criptoLoja);
-							descriptografado = (String) msgDescriptograda.getMensagem();
+							descriptografado = (String) handleResponse(reply, criptoLoja);
 							System.out.println(descriptografado);
 							break;
 						case 2:
@@ -103,9 +101,7 @@ public class Cliente {
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							List<Veiculo> veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(c.toString());
@@ -118,9 +114,7 @@ public class Cliente {
 							temp = listarVeiculos();
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.listar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							if(temp!=null) {
 								for(Veiculo v : veiculos) {
 									System.out.println(v.toString());
@@ -133,7 +127,11 @@ public class Cliente {
 							temp = s.nextLine();
 
 							Veiculo v = alterarVeiculo();
-							Veiculo novoVec = stub.atualizar(temp, v,usedPort);
+							msg = new Mensagem(v, criptoLoja.assinarHash(criptoLoja.hMac(v)));
+							Mensagem msg2 = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
+							reply = stub.atualizar(criptoLoja.criptografar(msg2),
+									criptoLoja.criptografar(msg),usedPort);
+							Veiculo novoVec = (Veiculo) handleResponse(reply, criptoLoja);
 							if(novoVec!=null) {
 								System.out.println(novoVec.toString());
 							}
@@ -148,9 +146,7 @@ public class Cliente {
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -162,7 +158,10 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.deletar(temp,usedPort)) {
+								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
+								reply = stub.deletar(criptoLoja.criptografar(msg),usedPort);
+								boolean retorno = (boolean) handleResponse(reply, criptoLoja);
+								if(retorno) {
 									System.out.println("Removido com sucesso");
 								}
 								else System.out.println("Veiculo nao disponivel");
@@ -177,9 +176,7 @@ public class Cliente {
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg),usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -190,8 +187,11 @@ public class Cliente {
 							else {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
+								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
+								reply = stub.comprar(criptoLoja.criptografar(msg), usedPort);
+								boolean retornoCompra = (boolean) handleResponse(reply,criptoLoja);
 								s.nextLine();
-								if(stub.comprar(temp,usedPort)) {
+								if(retornoCompra) {
 									System.out.println("Compra realizada!");
 								}
 								else System.out.println("Veiculo nao encontrado");
@@ -199,7 +199,9 @@ public class Cliente {
 							break;
 
 						case 7:
-							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
+							reply = stub.getQuantidade(usedPort);
+							int quantidade = (int) handleResponse(reply,criptoLoja);
+							System.out.println("Total de veiculos: "+quantidade);
 							break;
 						case 8:
 							keepLogged = false;
@@ -236,9 +238,7 @@ public class Cliente {
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							List<Veiculo> veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(c.toString());
@@ -252,9 +252,7 @@ public class Cliente {
 							if(temp!=null) {
 								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 								reply = stub.listar(criptoLoja.criptografar(msg), usedPort);
-								msgDescriptograda = criptoLoja.descriptografar(reply);
-								autenticar(msgDescriptograda, criptoLoja);
-								veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+								veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 								for(Veiculo v : veiculos) {
 									System.out.println(v.toString());
 								}
@@ -269,9 +267,7 @@ public class Cliente {
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
-							msgDescriptograda = criptoLoja.descriptografar(reply);
-							autenticar(msgDescriptograda, criptoLoja);
-							veiculos = (List<Veiculo>) msgDescriptograda.getMensagem();
+							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -283,7 +279,10 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.comprar(temp,usedPort)) {
+								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
+								reply = stub.comprar(criptoLoja.criptografar(msg), usedPort);
+								boolean retornoCompra = (boolean) handleResponse(reply,criptoLoja);
+								if(retornoCompra) {
 									System.out.println("Compra realizada!");
 								}
 								else System.out.println("Veiculo nao encontrado");
@@ -291,7 +290,9 @@ public class Cliente {
 							break;
 
 						case 4:
-							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
+							reply = stub.getQuantidade(usedPort);
+							int quantidade = (int) handleResponse(reply,criptoLoja);
+							System.out.println("Total de veiculos: "+quantidade);
 							break;
 						case 5:
 							keepLogged = false;
@@ -456,4 +457,10 @@ public class Cliente {
 			throw new NaoAutenticoException("Mensagem não autenticada!");
 		}
 	}
+	public static Object handleResponse(byte[] reply, Cripto cripto) throws Exception {
+		Mensagem msgDecifrada = cripto.descriptografar(reply);
+		autenticar(msgDecifrada,cripto);
+		return msgDecifrada.getMensagem();
+	}
+
 }

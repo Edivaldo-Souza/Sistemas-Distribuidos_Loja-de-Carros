@@ -12,14 +12,14 @@ import model.Credenciais;
 import model.Veiculo;
 
 public interface ReverseProxy extends Remote{
-	int autenticar(Credenciais c) throws RemoteException;
+	byte[] autenticar(byte[] c) throws RemoteException;
 	byte[] adicionar(byte[] v, int port)  throws RemoteException;
 	byte[] buscar(byte[] dados, int port) throws RemoteException;
 	byte[] listar(byte[] dados, int port) throws RemoteException;
-	Veiculo atualizar(String renavam, Veiculo v,int port) throws RemoteException;
-	boolean deletar(String v,int port) throws RemoteException;
-	boolean comprar(String v,int port) throws RemoteException;
-	int getQuantidade(int port) throws RemoteException;
+	byte[] atualizar(byte[] renavam, byte[] v,int port) throws RemoteException;
+	byte[] deletar(byte[] v,int port) throws RemoteException;
+	byte[] comprar(byte[] v,int port) throws RemoteException;
+	byte[] getQuantidade(int port) throws RemoteException;
 	int getIndividualPort() throws RemoteException;
 	int getServicePort() throws RemoteException;
 	int getClientPort() throws RemoteException;

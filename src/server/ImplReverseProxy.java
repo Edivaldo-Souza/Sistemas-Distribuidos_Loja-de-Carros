@@ -28,7 +28,7 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 	
 	@Override
-	public int autenticar(Credenciais c) throws RemoteException {
+	public byte[] autenticar(byte[] c) throws RemoteException {
 		try {
 			Autenticador stub = (Autenticador) Naming.lookup("//localhost:2000/Autenticador");
 			return stub.autenticar(c);
@@ -37,7 +37,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return 0;
+		return new byte[0];
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public Veiculo atualizar(String renavam, Veiculo v,int port) throws RemoteException {
+	public byte[] atualizar(byte[] renavam, byte[] v,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
@@ -109,7 +109,7 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public boolean deletar(String v,int port) throws RemoteException {
+	public byte[] deletar(byte[] v,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
@@ -119,11 +119,11 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		return new byte[0];
 	}
 
 	@Override
-	public boolean comprar(String v,int port) throws RemoteException {
+	public byte[] comprar(byte[] v,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
@@ -133,11 +133,11 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		return new byte[0];
 	}
 
 	@Override
-	public int getQuantidade(int port) throws RemoteException {
+	public byte[] getQuantidade(int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
@@ -147,7 +147,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return 0;
+		return new byte[0];
 	}
 	
 	
