@@ -1,35 +1,30 @@
 package server;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.List;
 
+import cripto.Chave;
+import cripto.Cripto;
 import interfaces.Autenticador;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
-import model.Categorias;
 import model.Credenciais;
-import model.TipoDeUsuario;
 import model.Veiculo;
 
 public class ImplReverseProxy implements ReverseProxy{
 	public int servicePort = 2001;
 	public int clientPort = 2001;
-	
-	public int individualsPorts = 2;
+	private Cripto cripto;
+	public int individualsPorts = 8002;
 	
 	public ImplReverseProxy() {
-		
+		this.cripto = new Cripto();
 	}
 	
 	@Override
@@ -46,12 +41,10 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public Veiculo adicionar(Veiculo v,int port) throws RemoteException {
+	public byte[] adicionar(byte[] v,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			
 			stub.adicionar(v);
 			
 		} catch (MalformedURLException e) {
@@ -63,38 +56,42 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return v;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return v;
 	}
 
 	@Override
-	public List<Veiculo> buscar(String renavam,int port) throws RemoteException {
+	public byte[] buscar(byte[] dados,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			
-			return stub.buscar(renavam);
+			return stub.buscar(dados);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		return null;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
 	}
 
 	@Override
-	public List<Veiculo> listar(String categoria,int port) throws RemoteException {
+	public byte[] listar(byte[] dados,int port) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
 					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			return stub.listar(categoria);
+			byte[] retorno = stub.listar(dados);
+			return retorno;
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return null;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return null;
 	}
 
 	@Override
@@ -159,7 +156,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			ImplReverseProxy refObjRemoto = new ImplReverseProxy();
 			ImplAutenticador refObjRemotoAuth = new ImplAutenticador();
 			ReverseProxy skeleton = (ReverseProxy) UnicastRemoteObject.exportObject(refObjRemoto, 0);
-			Autenticador skeletonAuth = (Autenticador) UnicastRemoteObject.exportObject(refObjRemotoAuth,1);
+			Autenticador skeletonAuth = (Autenticador) UnicastRemoteObject.exportObject(refObjRemotoAuth,8000);
 			
 			LocateRegistry.createRegistry(2000);
 			Registry reg = LocateRegistry.getRegistry(2000);
@@ -188,7 +185,7 @@ public class ImplReverseProxy implements ReverseProxy{
 		return this.clientPort;
 	}
 
-	
+
 	@Override
 	public void setIndividualPort(int port) throws RemoteException {
 		this.individualsPorts = port;
@@ -207,7 +204,44 @@ public class ImplReverseProxy implements ReverseProxy{
 		else this.clientPort = port;
 		
 	}
-	
-	
-	
+
+	@Override
+	public Chave trocaDeChavesRsaAuth(Chave publicKey) throws RemoteException, MalformedURLException, NotBoundException {
+		Autenticador stub = (Autenticador) Naming.lookup("//localhost:2000/Autenticador");
+		return stub.trocaDeChavesRsa(publicKey);
+	}
+
+	@Override
+	public Chave trocaDeChavesRsaLoja(Chave publicKey, int port) throws RemoteException, MalformedURLException, NotBoundException {
+		ServicoLojaDeCarros stub = (ServicoLojaDeCarros)
+				Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+		return stub.trocaDeChavesRsa(publicKey);
+	}
+
+	@Override
+	public byte[] requisitarChaveAesAuth() throws IOException, NotBoundException {
+		Autenticador stub = (Autenticador) Naming.lookup("//localhost:2000/Autenticador");
+		return stub.requisitarChaveAes();
+	}
+
+	@Override
+	public byte[] requisitarChaveAesLoja(int port) throws IOException, NotBoundException {
+		ServicoLojaDeCarros stub = (ServicoLojaDeCarros)
+				Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+		return stub.requisitarChaveAes();
+	}
+
+	@Override
+	public byte[] requisitarChaveHmacAuth() throws IOException, NotBoundException {
+		Autenticador stub = (Autenticador) Naming.lookup("//localhost:2000/Autenticador");
+		return stub.requisitarChaveHmac();
+	}
+
+	@Override
+	public byte[] requisitarChaveHmacLoja(int port) throws IOException, NotBoundException {
+		ServicoLojaDeCarros stub = (ServicoLojaDeCarros)
+				Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+		return stub.requisitarChaveHmac();
+	}
+
 }

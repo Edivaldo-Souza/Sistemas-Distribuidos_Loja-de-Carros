@@ -1,12 +1,22 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 
+import cripto.Base64;
+import cripto.Chave;
+import cripto.Cripto;
+import cripto.DadoCifrado;
 import interfaces.Autenticador;
 import model.Credenciais;
+import model.Mensagem;
 import model.TipoDeUsuario;
 
 public class ImplAutenticador implements Autenticador{
+	private Cripto cripto;
+	public ImplAutenticador(){
+		this.cripto = new Cripto("okay54232ikakjll");
+	}
 	
 	@Override
 	public int autenticar(Credenciais c) throws RemoteException {
@@ -25,6 +35,23 @@ public class ImplAutenticador implements Autenticador{
 		
 		return 2;
 	}
-	
+
+	@Override
+	public Chave trocaDeChavesRsa(Chave publicKey) throws RemoteException {
+		cripto.rsa.setPublicKeyExterna(publicKey); // recebe a public key do cliente e retorna a public key do serviço
+		return cripto.rsa.getPublicKey();
+	}
+
+	@Override
+	public byte[] requisitarChaveAes() throws IOException{
+		DadoCifrado chaveCifrada =cripto.rsa.cifrar(cripto.aes.chave.getEncoded(),
+				cripto.rsa.getPublicKeyExterna());
+		return Base64.codificar(DadoCifrado.serializar(chaveCifrada));
+	}
+
+	public byte[] requisitarChaveHmac() throws IOException {
+		return cripto.criptografar(new Mensagem(cripto.chaveHmac, cripto.assinarHash(cripto.chaveHmac)));
+	}
+
 }
 

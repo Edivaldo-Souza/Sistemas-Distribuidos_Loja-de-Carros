@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
@@ -12,18 +13,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import cripto.Base64;
+import cripto.Chave;
+import cripto.Cripto;
+import cripto.DadoCifrado;
 import interfaces.BancoDeDados;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Categorias;
+import model.Mensagem;
+import model.NaoAutenticoException;
 import model.Veiculo;
 
 public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	private static int usedPort;
-	
+	private Cripto cripto;
+
+	public ImplServicoLojaDeCarros(){
+		this.cripto = new Cripto("kalo54232bcaa111");
+		System.out.println(cripto.rsa.getPublicKey().valorDaChave + " : " + cripto.rsa.getPublicKey().modulo);
+	}
+
 	@Override
-	public Veiculo adicionar(Veiculo v) throws RemoteException {
+	public byte[] adicionar(byte[] dados) throws Exception {
 		BancoDeDados stub;
+		Mensagem msgDescriptografada = cripto.descriptografar(dados);
+		autenticar(msgDescriptografada, cripto);
+		Veiculo v = (Veiculo) msgDescriptografada.getMensagem();
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			
@@ -41,11 +57,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
 				rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 			}
-			
+
 			Veiculo nv = stub.add(v);
 			rep2.add(v);
 			rep3.add(v);
-			return nv;
+			return cripto.criptografar(new Mensagem(nv, cripto.assinarHash(cripto.hMac(nv))));
 		} catch (MalformedURLException | RemoteException | NotBoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -53,8 +69,12 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		return null;
 	}
 	@Override
-	public List<Veiculo> buscar(String renavam) throws RemoteException {
+	public byte[] buscar(byte[] dados) throws Exception {
 		BancoDeDados stub;
+		System.out.println(cripto.aes.chave);
+		Mensagem msgDescriptografada = cripto.descriptografar(dados);
+		autenticar(msgDescriptografada, cripto);
+		String renavam = (String) msgDescriptografada.getMensagem();
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			List<Veiculo> database = stub.get();
@@ -64,7 +84,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 					resultado.add(c);
 				}
 			}
-			return resultado;
+			return cripto.criptografar(new Mensagem(resultado,cripto.assinarHash(cripto.hMac(resultado))));
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -73,8 +93,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		
 	}
 	@Override
-	public List<Veiculo> listar(String categoria) throws RemoteException {
+	public byte[] listar(byte[] dados) throws Exception {
 		List<Veiculo> resultado = new ArrayList<Veiculo>();
+		Mensagem msgDescriptografada = cripto.descriptografar(dados);
+		autenticar(msgDescriptografada,cripto);
+		String categoria = (String) msgDescriptografada.getMensagem();
 		try {
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			if(categoria.equals("ECONOMICO")) {
@@ -98,7 +121,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				}
 			}
 			Collections.sort(resultado);
-			return resultado;
+			return cripto.criptografar(new Mensagem(resultado, cripto.assinarHash(cripto.hMac(resultado))));
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -216,7 +239,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	}
 	@Override
 	public int getQuantidade() throws RemoteException {
-		
+		System.out.println("É p;ra printar algo");
 		BancoDeDados stub;
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
@@ -228,8 +251,30 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		}
 		return 0;
 	}
-	
-	
+
+	@Override
+	public Chave trocaDeChavesRsa(Chave publicKey) throws RemoteException {
+		System.out.println("Esse método sequer tá sendo executado?");
+		cripto.rsa.setPublicKeyExterna(publicKey); // recebe a public key do cliente e retorna a public key do serviço
+		System.out.println(cripto.rsa.getPublicKey().valorDaChave + " : modulo " +
+				cripto.rsa.getPublicKey().modulo);
+		System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave + " : modulo " +
+				cripto.rsa.getPublicKeyExterna().modulo);
+		return cripto.rsa.getPublicKey();
+	}
+
+	@Override
+	public byte[] requisitarChaveAes() throws IOException{
+		DadoCifrado chaveCifrada =cripto.rsa.cifrar(cripto.aes.chave.getEncoded(),
+				cripto.rsa.getPublicKeyExterna());
+		return Base64.codificar(DadoCifrado.serializar(chaveCifrada));
+	}
+
+	public byte[] requisitarChaveHmac() throws IOException {
+		return cripto.criptografar(new Mensagem(cripto.chaveHmac, cripto.assinarHash(cripto.chaveHmac)));
+	}
+
+
 	public static void main(String[] args) {
 		
 		try {
@@ -257,10 +302,6 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			reg.bind("BancoDeDados",skeletonBD);
 			
 			usedPort = stub.getServicePort();
-			/*if(usedPort==2002) {
-				Thread.sleep(10000);
-			}*/
-			
 			stub.setServicePort(stub.getServicePort()+1);
 
 		} catch (RemoteException e) {
@@ -278,4 +319,13 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			e.printStackTrace();
 		}
 }
+	public static void autenticar(Mensagem msg, Cripto cripto) throws Exception {
+		DadoCifrado hmacAssinado = msg.gethMacAssinado();
+		String hmac = cripto.verificarAssinatura(hmacAssinado);
+		if(!hmac.equals(cripto.hMac(msg.getMensagem()))) {
+			throw new NaoAutenticoException("Mensagem não autenticada!");
+		}
+	}
+
+
 }
