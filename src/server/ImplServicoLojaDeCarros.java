@@ -1,5 +1,8 @@
 package server;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.Naming;
@@ -12,18 +15,38 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.sun.jdi.StringReference;
+import cripto.Base64;
+import cripto.Chave;
+import cripto.Cripto;
+import cripto.DadoCifrado;
 import interfaces.BancoDeDados;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Categorias;
+import model.Mensagem;
+import model.NaoAutenticoException;
 import model.Veiculo;
 
 public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	private static int usedPort;
-	
+	private Cripto cripto;
+	private Cripto criptoDatabase;
+
+	public ImplServicoLojaDeCarros() throws UnsupportedEncodingException {
+		this.cripto = new Cripto("kalo54232bcaa111");
+		Chave chavePublica = new Chave();
+		chavePublica.modulo = new BigInteger("899"); chavePublica.valorDaChave = new BigInteger("611");
+		Chave chavePrivada = new Chave();
+		chavePrivada.modulo = new BigInteger("899"); chavePrivada.valorDaChave = new BigInteger("11");
+		this.criptoDatabase = new Cripto("[B@29ca901ejdh1u", chavePublica, chavePrivada);
+
+	}
+
 	@Override
-	public Veiculo adicionar(Veiculo v) throws RemoteException {
+	public byte[] adicionar(byte[] dados) throws Exception {
 		BancoDeDados stub;
+		Veiculo v = (Veiculo) handleRequest(dados,cripto);
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
 			
@@ -41,11 +64,16 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
 				rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 			}
-			
-			Veiculo nv = stub.add(v);
-			rep2.add(v);
-			rep3.add(v);
-			return nv;
+			System.out.println(cripto.aes.chave);
+			System.out.println(cripto.rsa.getPrivateKey().valorDaChave + " " + cripto.rsa.getPrivateKey().modulo);
+			System.out.println(cripto.rsa.getPublicKey().valorDaChave + " " + cripto.rsa.getPublicKey().modulo);
+			System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave + " " + cripto.rsa.getPublicKeyExterna().modulo);
+			System.out.println(cripto.chaveHmac);
+			byte[] dadosNv = stub.add(montarRequest(v,criptoDatabase));
+			Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
+			rep2.add(montarRequest(v,criptoDatabase));
+			rep3.add(montarRequest(v,criptoDatabase));
+			return montarRequest(nv,cripto);
 		} catch (MalformedURLException | RemoteException | NotBoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -53,18 +81,21 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		return null;
 	}
 	@Override
-	public List<Veiculo> buscar(String renavam) throws RemoteException {
+	public byte[] buscar(byte[] dados) throws Exception {
 		BancoDeDados stub;
+		System.out.println(cripto.aes.chave);
+		String renavam = (String) handleRequest(dados,cripto);
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			List<Veiculo> database = stub.get();
+			byte[] bytesDatabase = stub.get();
+			List<Veiculo> database = (List<Veiculo>) handleRequest(bytesDatabase,criptoDatabase);
 			List<Veiculo> resultado = new ArrayList<Veiculo>();
 			for(Veiculo c : database) {
 				if(c.getRenavam().equals(renavam) || c.getNome().equals(renavam)) {
 					resultado.add(c);
 				}
 			}
-			return resultado;
+			return montarRequest(resultado,cripto);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -73,32 +104,34 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		
 	}
 	@Override
-	public List<Veiculo> listar(String categoria) throws RemoteException {
+	public byte[] listar(byte[] dados) throws Exception {
 		List<Veiculo> resultado = new ArrayList<Veiculo>();
+		String categoria = (String) handleRequest(dados,cripto);
 		try {
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
+			List<Veiculo> veiculos = (List<Veiculo>) handleRequest(stub.get(),criptoDatabase);
 			if(categoria.equals("ECONOMICO")) {
-				for(Veiculo v : stub.get()) {
+				for(Veiculo v : veiculos) {
 					if(v.getCategoria()==Categorias.ECONOMICO) resultado.add(v);
 				}
 			}
 			else if(categoria.equals("INTERMEDIARIO")) {
-				for(Veiculo v : stub.get()) {
+				for(Veiculo v : veiculos) {
 					if(v.getCategoria()==Categorias.INTERMEDIARIO) resultado.add(v);
 				}
 			}
 			else if(categoria.equals("EXECUTIVO")) {
-				for(Veiculo v : stub.get()) {
+				for(Veiculo v : veiculos) {
 					if(v.getCategoria()==Categorias.EXECUTIVO) resultado.add(v);
 				}
 			}
 			else {
-				for(Veiculo v : stub.get()) {
+				for(Veiculo v : veiculos) {
 					resultado.add(v);
 				}
 			}
 			Collections.sort(resultado);
-			return resultado;
+			return montarRequest(resultado,cripto);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -106,10 +139,12 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		return null;
 	}
 	@Override
-	public Veiculo atualizar(String renavam, Veiculo v) throws RemoteException {
+	public byte[] atualizar(byte[] bytesRenavam, byte[] bytesVeiculo) throws RemoteException {
 		try {
+			String renavam = (String) handleRequest(bytesRenavam,cripto);
+			Veiculo v = (Veiculo) handleRequest(bytesVeiculo, cripto);
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			List<Veiculo> database = stub.get();
+			List<Veiculo> database = (List<Veiculo>) handleRequest(stub.get(), criptoDatabase);
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(renavam)) {
 					v.setRenavam(renavam);
@@ -130,24 +165,28 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 					}
 					
-					Veiculo nv = stub.update(v, i);
-					rep2.update(nv, i);
-					rep3.update(nv, i);
-					return nv;
+					byte[] dadosNv = stub.update(montarRequest(v,criptoDatabase), montarRequest(i,criptoDatabase));
+					Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
+					rep2.update(montarRequest(v,criptoDatabase), montarRequest(i,criptoDatabase));
+					rep3.update(montarRequest(nv,criptoDatabase), montarRequest(i,criptoDatabase));
+					return montarRequest(nv,cripto);
 				}
 			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		return null;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return null;
 	}
 	@Override
-	public boolean deletar(String v) throws RemoteException {
+	public byte[] deletar(byte[] dadosV) throws Exception {
 		try {
+			String v = (String) handleRequest(dadosV,cripto);
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			List<Veiculo> database = stub.get();
+			List<Veiculo> database = (List<Veiculo>) handleRequest(stub.get(),criptoDatabase);
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v)) {
 					BancoDeDados rep2;
@@ -165,24 +204,27 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 					}
 					
-					stub.delete(i);
-					rep2.delete(i);
-					rep3.delete(i);
-					return true;
+					stub.delete(montarRequest(i,criptoDatabase));
+					rep2.delete(montarRequest(i,criptoDatabase));
+					rep3.delete(montarRequest(i,criptoDatabase));
+					return montarRequest(true,cripto);
 				}
 			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		return false;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+		return montarRequest(false,cripto);
 	}
 	@Override
-	public boolean comprar(String v) throws RemoteException {
+	public byte[] comprar(byte[] dadosV) throws Exception {
 		try {
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			List<Veiculo> database = stub.get();
+			List<Veiculo> database = (List<Veiculo>) handleRequest(stub.get(), criptoDatabase);
+			String v = (String) handleRequest(dadosV,cripto);
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v) && database.get(i).isDisponivel()) {
 					database.get(i).setDisponivel(false);
@@ -201,35 +243,54 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
 						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 					}
-					
-					stub.update(database.get(i), i);
-					rep2.update(database.get(i), i);
-					rep3.update(database.get(i), i);
-					return true;
+					Veiculo veiculo = database.get(i);
+					stub.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+					rep2.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+					rep3.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+					return montarRequest(true,cripto);
 				}
 			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return false;
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return montarRequest(false,cripto);
 	}
 	@Override
-	public int getQuantidade() throws RemoteException {
-		
+	public byte[] getQuantidade() throws Exception {
 		BancoDeDados stub;
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			List<Veiculo> database = stub.get();
-			return database.size();
-		} catch (MalformedURLException | RemoteException | NotBoundException e) {
+			List<Veiculo> database = (List<Veiculo>) handleRequest(stub.get(),criptoDatabase);
+			return montarRequest(database.size(),cripto);
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return 0;
+		return montarRequest(0, cripto);
 	}
-	
-	
+
+	@Override
+	public Chave trocaDeChavesRsa(Chave publicKey) throws RemoteException {
+		cripto.rsa.setPublicKeyExterna(publicKey); // recebe a public key do cliente e retorna a public key do serviço
+		return cripto.rsa.getPublicKey();
+	}
+
+	@Override
+	public byte[] requisitarChaveAes() throws IOException{
+		DadoCifrado chaveCifrada =cripto.rsa.cifrar(cripto.aes.chave.getEncoded(),
+				cripto.rsa.getPublicKeyExterna());
+		return Base64.codificar(DadoCifrado.serializar(chaveCifrada));
+	}
+
+	public byte[] requisitarChaveHmac() throws IOException {
+		System.out.println("Tá chegando aqui?");
+		return cripto.criptografar(new Mensagem(cripto.chaveHmac));
+	}
+
+
 	public static void main(String[] args) {
 		
 		try {
@@ -257,11 +318,22 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			reg.bind("BancoDeDados",skeletonBD);
 			
 			usedPort = stub.getServicePort();
-			/*if(usedPort==2002) {
-				Thread.sleep(10000);
-			}*/
-			
 			stub.setServicePort(stub.getServicePort()+1);
+
+			// trocar chaves com o serviço do banco de dados
+			BancoDeDados stubBD = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
+			// troca a chave rsa com o serviço do banco de dados
+			objRemoto.criptoDatabase.rsa.setPublicKeyExterna(stubBD
+					.trocaDeChavesRsa(objRemoto.criptoDatabase.rsa.getPublicKey()));
+			// em seguida, recebe a chave aes do serviço
+			byte[] chaveCifradaBase64 = stubBD.requisitarChaveAes();
+			DadoCifrado chaveCifrada = DadoCifrado.deserializar(Base64.decodificar(chaveCifradaBase64));
+			byte[] chaveDecifrada = objRemoto.criptoDatabase.rsa.decifrar(
+					chaveCifrada, objRemoto.criptoDatabase.rsa.getPrivateKey());
+			objRemoto.criptoDatabase.aes.reconstruirChave(chaveDecifrada);
+			// E por fim, o hmac
+			objRemoto.criptoDatabase.chaveHmac = (String)objRemoto.criptoDatabase.descriptografar(
+					stubBD.requisitarChaveHmac()).getMensagem();
 
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
@@ -276,6 +348,25 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		} catch (NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+	public static void autenticar(Mensagem msg, Cripto cripto) throws Exception {
+		DadoCifrado hmacAssinado = msg.gethMacAssinado();
+		String hmac = cripto.verificarAssinatura(hmacAssinado);
+		if(!hmac.equals(cripto.hMac(msg.getMensagem()))) {
+			throw new NaoAutenticoException("Mensagem não autenticada!");
 		}
-}
+	}
+	public static Object handleRequest(byte[] reply, Cripto cripto) throws Exception {
+		Mensagem msgDecifrada = cripto.descriptografar(reply);
+		autenticar(msgDecifrada,cripto);
+		return msgDecifrada.getMensagem();
+	}
+	public static byte[] montarRequest(Object v, Cripto cripto) throws Exception {
+		return cripto.criptografar(new Mensagem(v,cripto.assinarHash(cripto.hMac(v))));
+	}
 }
