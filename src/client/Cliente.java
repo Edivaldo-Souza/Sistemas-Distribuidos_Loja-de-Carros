@@ -124,8 +124,8 @@ public class Cliente {
 							temp = s.nextLine();
 
 							Veiculo vech = alterarVeiculo();
-							reply = stub.atualizar(montarRequest(vech,criptoLoja),
-									montarRequest(temp,criptoLoja),usedPort);
+							reply = stub.atualizar(montarRequest(temp,criptoLoja),
+									montarRequest(vech,criptoLoja),usedPort);
 							Veiculo novoVec = (Veiculo) handleResponse(reply, criptoLoja);
 							if(novoVec!=null) {
 								System.out.println(novoVec.toString());
