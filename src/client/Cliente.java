@@ -1,7 +1,9 @@
 package client;
 
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -14,21 +16,28 @@ import model.Veiculo;
 
 public class Cliente {
 	private static Scanner s = new Scanner(System.in);
+	private static String endLine = "0ersf1";
 	
 	public static void main(String[] args) {
-		String host = "127.0.0.1";
+		String host = "localhost";
 		boolean keepRunning = true;
 		boolean keepLogged = true;
 		int toMainMenu, cont;
 		Credenciais currentUser;
-		List<Veiculo> resultado;
+		List<String> resultado;
 		int usedPort;
+		String connection;
 		
+		
+		System.setProperty("java.security.policy", "java.policy");
 		try {
 			Registry registro = LocateRegistry.getRegistry(host, 2000);
 			ReverseProxy stub = (ReverseProxy) registro.lookup("ReverseProxy");
 			usedPort = stub.getClientPort();
 			stub.setClientPort(usedPort+1);
+			
+			connection = "//"+host+":"+usedPort+"/ServicoLojaDeCarros";
+			//connection = "//"+host+":"+usedPort+"/BancoDeDados";
 			
 			while(keepRunning) {
 				keepLogged = true;
@@ -36,6 +45,8 @@ public class Cliente {
 				if(currentUser==null) {
 					break;
 				}
+				System.out.println("Informe o servico: ");
+				s.nextLine();
 				toMainMenu = stub.autenticar(currentUser);
 				
 				if(toMainMenu==1) {
@@ -61,13 +72,14 @@ public class Cliente {
 						int num = Integer.parseInt(option);
 						switch(num) {
 						case 1:
-							reply = stub.adicionar(adicionarVeiculo(),usedPort).toString();
+							reply = stub.adicionar(adicionarVeiculo()+endLine+connection).toString();
 							System.out.println(reply);
+							
 							break;
 						case 2:
 							temp = buscarVeiculo();
 							cont = 0;
-							for(Veiculo c: stub.buscar(temp,usedPort)) {
+							for(String c: stub.buscar(temp+endLine+connection)) {
 								cont++;
 								System.out.println(c.toString());
 							}
@@ -78,7 +90,7 @@ public class Cliente {
 						case 3:
 							temp = listarVeiculos();
 							if(temp!=null) {
-								for(Veiculo v : stub.listar(temp,usedPort)) {
+								for(String v : stub.listar(temp+endLine+connection)) {
 									System.out.println(v.toString());
 								}
 							}
@@ -88,10 +100,10 @@ public class Cliente {
 							System.out.println("Digite o renavam do veiculo: ");
 							temp = s.nextLine();
 
-							Veiculo v = alterarVeiculo();
-							Veiculo novoVec = stub.atualizar(temp, v,usedPort);
+							String v = alterarVeiculo(temp);
+							String novoVec = stub.atualizar(v+endLine+connection);
 							if(novoVec!=null) {
-								System.out.println(novoVec.toString());
+								System.out.println(novoVec);
 							}
 							else System.out.println("Nenhuma correspondencia");
 							break;
@@ -102,10 +114,10 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp,usedPort);
-							for(Veiculo c: resultado) {
+							resultado = stub.buscar(temp+endLine+connection);
+							for(String c: resultado) {
 								cont++;
-								System.out.println(cont+"° veiculo: \n"+c.toString());
+								System.out.println(cont+"° veiculo: \n"+c);
 							}
 							if(cont==0) {
 								System.out.println("Nenhuma correspondencia");
@@ -114,10 +126,9 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.deletar(temp,usedPort)) {
-									System.out.println("Removido com sucesso");
-								}
-								else System.out.println("Veiculo nao disponivel");
+								System.out.println
+								(stub.deletar(temp+endLine+connection)); 
+									
 							}
 							break;
 
@@ -127,10 +138,10 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp,usedPort);
-							for(Veiculo c: resultado) {
+							resultado = stub.buscar(temp+endLine+connection);
+							for(String c: resultado) {
 								cont++;
-								System.out.println(cont+"° veiculo: \n"+c.toString());
+								System.out.println(cont+"° veiculo: \n"+c);
 							}
 							if(cont==0) {
 								System.out.println("Nenhuma correspondencia");
@@ -139,15 +150,13 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.comprar(temp,usedPort)) {
-									System.out.println("Compra realizada!");
-								}
-								else System.out.println("Veiculo nao encontrado");
+								System.out.println
+								(stub.deletar(temp+endLine+connection));
 							}
 							break;
 
 						case 7:
-							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
+							System.out.println("Total de veiculos: "+stub.getQuantidade(connection));
 							break;
 						case 8:
 							keepLogged = false;
@@ -180,9 +189,9 @@ public class Cliente {
 						case 1:
 							temp = buscarVeiculo();
 							cont = 0;
-							for(Veiculo c: stub.buscar(temp,usedPort)) {
+							for(String c: stub.buscar(temp+endLine+connection)) {
 								cont++;
-								System.out.println(c.toString());
+								System.out.println(c);
 							}
 							if(cont==0) {
 								System.out.println("Nenhum correspondencia");
@@ -191,8 +200,8 @@ public class Cliente {
 						case 2:
 							temp = listarVeiculos();
 							if(temp!=null) {
-								for(Veiculo v : stub.listar(temp,usedPort)) {
-									System.out.println(v.toString());
+								for(String v : stub.listar(temp+endLine+connection)) {
+									System.out.println(v);
 								}
 							}
 							break;
@@ -203,10 +212,10 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							resultado = stub.buscar(temp,usedPort);
-							for(Veiculo c: resultado) {
+							resultado = stub.buscar(temp+endLine+connection);
+							for(String c: resultado) {
 								cont++;
-								System.out.println(cont+"° veiculo: \n"+c.toString());
+								System.out.println(cont+"° veiculo: \n"+c);
 							}
 							if(cont==0) {
 								System.out.println("Nenhuma correspondencia");
@@ -215,15 +224,13 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								if(stub.comprar(temp,usedPort)) {
-									System.out.println("Compra realizada!");
-								}
-								else System.out.println("Veiculo nao encontrado");
+								System.out.println
+								(stub.comprar(temp+endLine+connection));
 							}
 							break;
 
 						case 4:
-							System.out.println("Total de veiculos: "+stub.getQuantidade(usedPort));
+							System.out.println("Total de veiculos: "+stub.getQuantidade(connection));
 							break;
 						case 5:
 							keepLogged = false;
@@ -275,7 +282,8 @@ public class Cliente {
 		
 	}
 	
-	private static Veiculo adicionarVeiculo() {
+	
+	private static String adicionarVeiculo() {
 		Veiculo vec = new Veiculo();
 		String categoria;
 		
@@ -305,20 +313,42 @@ public class Cliente {
 		s.nextLine();
 		
 		System.out.println("Digite preco do veiculo: ");
-		vec.setPreco(s.nextDouble());
-		s.nextLine();
+		String preco = s.nextLine();
+		String req = s.nextLine();
+		String veiculoStr;
 		
-		vec.setDisponivel(true);
+		if(req.isEmpty()) {
+			veiculoStr = vec.getCategoria()+endLine
+					+vec.getNome()+endLine
+					+vec.getRenavam()+endLine
+					+vec.getAnoFabricacao()+endLine
+					+"D"+endLine
+					+preco;
+		}
+		else veiculoStr = vec.getCategoria()+endLine
+					+vec.getNome()+endLine
+					+vec.getRenavam()+endLine
+					+vec.getAnoFabricacao()+endLine
+					+"D"+endLine
+					+preco+endLine
+					+req;
 		
-		return vec;
+		
+		return veiculoStr;
 	}
 	
 	public static String buscarVeiculo() {
 		String option;
 		System.out.println("Digite o renavam ou nome do veiculo: ");
 		option = s.nextLine();
+		String con = s.nextLine();
 		
-		return option;
+		if(con.isEmpty()) {
+			return option;
+		}
+		else return option+endLine+con;
+		
+	
 	}
 	
 	public static String listarVeiculos() {
@@ -330,6 +360,7 @@ public class Cliente {
 				+ "4 - Nao especificar\n"
 				+ "Digite uma opcao: ");
 		option = s.nextLine();
+		String con = s.nextLine();
 		int opt;
 		
 		try {
@@ -338,17 +369,27 @@ public class Cliente {
 			opt = 4;
 		}
 		
-		switch(opt) {
-		case 1: return "ECONOMICO";
-		case 2: return "INTERMEDIARIO";
-		case 3: return "EXECUTIVO";
-		case 4: return "NAODEFINIDO";
-		default: return null;
+		if(con.isEmpty()) {
+			switch(opt) {
+			case 1: return "ECONOMICO";
+			case 2: return "INTERMEDIARIO";
+			case 3: return "EXECUTIVO";
+			case 4: return "NAODEFINIDO";
+			default: return null;
+			}
 		}
-
+		else {
+			switch(opt) {
+			case 1: return "ECONOMICO"+endLine+con;
+			case 2: return "INTERMEDIARIO"+endLine+con;
+			case 3: return "EXECUTIVO"+endLine+con;
+			case 4: return "NAODEFINIDO"+endLine+con;
+			default: return null;
+		}
+		}
 	}
 	
-	public static Veiculo alterarVeiculo() {
+	public static String alterarVeiculo(String temp) {
 		Veiculo vec = new Veiculo();
 		String categoria;
 		
@@ -375,10 +416,29 @@ public class Cliente {
 		s.nextLine();
 		
 		System.out.println("Digite preco do veiculo: ");
-		vec.setPreco(s.nextDouble());
-		s.nextLine();
+		String preco = s.nextLine();
+		String req = s.nextLine();
+		String veiculoStr;
+		vec.setRenavam(temp);
 		
-		return vec;
+		if(req.isEmpty()) {
+			veiculoStr = vec.getCategoria()+endLine
+					+vec.getNome()+endLine
+					+vec.getRenavam()+endLine
+					+vec.getAnoFabricacao()+endLine
+					+"D"+endLine
+					+preco;
+		}
+		else veiculoStr = vec.getCategoria()+endLine
+					+vec.getNome()+endLine
+					+vec.getRenavam()+endLine
+					+vec.getAnoFabricacao()+endLine
+					+"D"+endLine
+					+preco+endLine
+					+req;
+		
+		
+		return veiculoStr;
 	}
 
 }

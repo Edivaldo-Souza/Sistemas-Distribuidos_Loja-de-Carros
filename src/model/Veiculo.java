@@ -94,5 +94,20 @@ public class Veiculo implements Serializable, Comparable<Veiculo>{
 		
 	}
 	
+	public void toVeiculo(String v) {
+		String[] params = v.split("0ersf1");
+		
+		if(params[0].equals("ECONOMICO")) this.categoria = Categorias.ECONOMICO;
+		else if(params[0].equals("INTERMEDIARIO")) this.categoria = Categorias.INTERMEDIARIO;
+		else if(params[0].equals("EXECUTIVO")) this.categoria = Categorias.EXECUTIVO;
+		
+		this.nome = params[1];
+		this.renavam = params[2];
+		this.anoFabricacao = Integer.parseInt(params[3]);
+		if(params[4].equals("D")) this.disponivel = true;
+		else this.disponivel = false;
+		this.preco = Double.parseDouble(params[5]);
+	}
+	
 	
 }

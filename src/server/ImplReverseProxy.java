@@ -26,10 +26,15 @@ public class ImplReverseProxy implements ReverseProxy{
 	public int servicePort = 2001;
 	public int clientPort = 2001;
 	
-	public int individualsPorts = 2;
+	public int individualsPorts = 3;
+	private static String endLine = "0ersf1";
 	
-	public ImplReverseProxy() {
-		
+	private boolean verificarRequisicao(String r) {
+		System.out.println(r);
+		if(!r.split(":")[1].split("/")[1].equals("ServicoLojaDeCarros")) {
+			return false;
+		}
+		return true;
 	}
 	
 	@Override
@@ -46,15 +51,24 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public Veiculo adicionar(Veiculo v,int port) throws RemoteException {
+	public String adicionar(String req) throws RemoteException {
+		
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+			String[] params = req.split(endLine);
 			
+			Veiculo newVeichle = new Veiculo();
 			
-			stub.adicionar(v);
-			
-		} catch (MalformedURLException e) {
+			if(verificarRequisicao(params[6])) {
+				newVeichle.toVeiculo(req);
+				
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[6]);
+				
+				stub.adicionar(newVeichle);
+					
+				return newVeichle.toString();
+			}
+		}catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (RemoteException e) {
@@ -64,17 +78,25 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return v;
+		return "Requisição Inválida";
 	}
 
 	@Override
-	public List<Veiculo> buscar(String renavam,int port) throws RemoteException {
+	public List<String> buscar(String req) throws RemoteException {
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			
-			return stub.buscar(renavam);
+			String[] params = req.split(endLine);
+			if(verificarRequisicao(params[1])) {
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[1]);
+				
+				List<Veiculo> lista = stub.buscar(params[0]);
+				List<String> listaStrs = new ArrayList<String>();
+				for(Veiculo v : lista) {
+					listaStrs.add(v.toString());
+				}
+				
+				return listaStrs; 
+			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -84,12 +106,23 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public List<Veiculo> listar(String categoria,int port) throws RemoteException {
+	public List<String> listar(String req) throws RemoteException {
+		String[] params = req.split(endLine);
+		
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+			if(verificarRequisicao(params[1])) {
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[1]);
+				
+				List<Veiculo> lista = stub.listar(params[0]);
+				List<String> listaStrs = new ArrayList<String>();
+				for(Veiculo v : lista) {
+					listaStrs.add(v.toString());
+				}
+				
+				return listaStrs; 
+			}
 			
-			return stub.listar(categoria);
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -98,12 +131,19 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public Veiculo atualizar(String renavam, Veiculo v,int port) throws RemoteException {
+	public String atualizar(String req) throws RemoteException {
+		
+		String[] params = req.split(endLine);
+		Veiculo newVeichle = new Veiculo();
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			return stub.atualizar(renavam, v);
+			newVeichle.toVeiculo(req);
+			if(verificarRequisicao(params[6])) {
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[6]);
+				
+				return stub.atualizar(newVeichle.getRenavam(), newVeichle).toString();
+			}
+
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -112,38 +152,55 @@ public class ImplReverseProxy implements ReverseProxy{
 	}
 
 	@Override
-	public boolean deletar(String v,int port) throws RemoteException {
+	public String deletar(String req) throws RemoteException {
+		String[] params = req.split(endLine);
+		String result;
+		System.out.println(req);
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			return stub.deletar(v);
+			if(verificarRequisicao(params[1])) {
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[1]);
+				
+				if(stub.deletar(params[0])) {
+					result = "Veiculo deletado";
+				}
+				else result = "Parametro errado";
+				return result;
+			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		result = "Requisicao Invalida";
+		return result;
 	}
 
 	@Override
-	public boolean comprar(String v,int port) throws RemoteException {
+	public String comprar(String req) throws RemoteException {
+		String[] params = req.split(endLine);
+		String result;
 		try {
-			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
-			
-			return stub.comprar(v);
+			if(verificarRequisicao(params[1])) {
+				ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
+						Naming.lookup(params[1]);
+				stub.comprar(params[0]);
+				result = "Compra realizada";
+				
+				return result;
+			}
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+		result = "Requisicao Invalida";
+		return result;
 	}
 
 	@Override
-	public int getQuantidade(int port) throws RemoteException {
+	public int getQuantidade(String req) throws RemoteException {
 		try {
 			ServicoLojaDeCarros stub = (ServicoLojaDeCarros) 
-					Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
+					Naming.lookup(req);
 			
 			return stub.getQuantidade();
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
@@ -155,16 +212,24 @@ public class ImplReverseProxy implements ReverseProxy{
 	
 	
 	public static void main(String[] args) {
+		
+		//System.setProperty("java.rmi.server.hostname","10.0.0.207");
+		//System.setProperty("java.security.policy","java.policy");
+		
 		try {
 			ImplReverseProxy refObjRemoto = new ImplReverseProxy();
 			ImplAutenticador refObjRemotoAuth = new ImplAutenticador();
+			ImplServicoLojaDeCarros refObjRemotoLoja = new ImplServicoLojaDeCarros();
 			ReverseProxy skeleton = (ReverseProxy) UnicastRemoteObject.exportObject(refObjRemoto, 0);
 			Autenticador skeletonAuth = (Autenticador) UnicastRemoteObject.exportObject(refObjRemotoAuth,1);
+			ServicoLojaDeCarros skeletonLoja = (ServicoLojaDeCarros) UnicastRemoteObject.exportObject(refObjRemotoLoja, 2);
 			
 			LocateRegistry.createRegistry(2000);
 			Registry reg = LocateRegistry.getRegistry(2000);
 			reg.bind("ReverseProxy", skeleton);
 			reg.bind("Autenticador", skeletonAuth);
+			reg.bind("ServicoLojaDeCarros", skeletonLoja);
+			
 			
 		} catch (Exception e) {
 			System.err.println("Servidor: " + e.toString());

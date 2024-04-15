@@ -9,13 +9,13 @@ import model.Veiculo;
 
 public interface ReverseProxy extends Remote{
 	int autenticar(Credenciais c) throws RemoteException;
-	Veiculo adicionar(Veiculo v,int port)  throws RemoteException;
-	List<Veiculo> buscar(String renavam,int port) throws RemoteException;
-	List<Veiculo> listar(String categoria,int port) throws RemoteException;
-	Veiculo atualizar(String renavam, Veiculo v,int port) throws RemoteException;
-	boolean deletar(String v,int port) throws RemoteException;
-	boolean comprar(String v,int port) throws RemoteException;
-	int getQuantidade(int port) throws RemoteException;
+	String adicionar(String req)  throws RemoteException;
+	List<String> buscar(String req) throws RemoteException;
+	List<String> listar(String req) throws RemoteException;
+	String atualizar(String req) throws RemoteException;
+	String deletar(String req) throws RemoteException;
+	String comprar(String req) throws RemoteException;
+	int getQuantidade(String req) throws RemoteException;
 	int getIndividualPort() throws RemoteException;
 	int getServicePort() throws RemoteException;
 	int getClientPort() throws RemoteException;
