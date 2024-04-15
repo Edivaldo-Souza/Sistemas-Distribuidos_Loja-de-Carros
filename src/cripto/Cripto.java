@@ -12,10 +12,12 @@ public class Cripto {
     public AES aes;
     public String chaveHmac;
     public Rsa rsa;
-    public Cripto(String chaveAES, String chaveHmac) throws UnsupportedEncodingException {
+    public Cripto(String chaveAES, Chave chaveRsaPublica, Chave chaveRsaPrivada) throws UnsupportedEncodingException {
         this.aes = new AES();
+        this.aes.reconstruirChave(chaveAES.getBytes());
         this.rsa = new Rsa();
-        this.chaveHmac = chaveHmac;
+        this.rsa.setPublicKey(chaveRsaPublica);
+        this.rsa.setPrivateKey(chaveRsaPrivada);
     }
     public Cripto(AES aes){
         this.aes = aes;
@@ -30,7 +32,6 @@ public class Cripto {
         this.aes = new AES();
         this.rsa = new Rsa();
     }
-
     public byte[] criptografar(Mensagem msg) throws IOException {
         byte[] msgEncriptada = aes.cifrar(Mensagem.serializar(msg));
         msgEncriptada = Base64.codificar(msgEncriptada);
@@ -49,7 +50,10 @@ public class Cripto {
     public DadoCifrado assinarHash(String hmac){
         return rsa.cifrar(hmac.getBytes(), rsa.getPrivateKey());
     }
-    public String verificarAssinatura(DadoCifrado assinatura){
-       return new String(rsa.decifrar(assinatura,rsa.getPublicKeyExterna()));
+    public String verificarAssinatura(DadoCifrado assinatura) throws UnsupportedEncodingException {
+       return new String(rsa.decifrar(assinatura,rsa.getPublicKeyExterna()), "UTF-8");
+    }
+    public static void main(String[] args) throws UnsupportedEncodingException {
+
     }
 }

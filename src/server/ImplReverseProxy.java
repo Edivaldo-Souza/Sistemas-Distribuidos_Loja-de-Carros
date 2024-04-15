@@ -118,8 +118,10 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return new byte[0];
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new byte[0];
 	}
 
 	@Override
@@ -132,8 +134,10 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return new byte[0];
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new byte[0];
 	}
 
 	@Override
@@ -146,8 +150,10 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (MalformedURLException | RemoteException | NotBoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		return new byte[0];
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return new byte[0];
 	}
 	
 	

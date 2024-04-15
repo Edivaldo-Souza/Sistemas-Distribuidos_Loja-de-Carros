@@ -1,5 +1,6 @@
 package cripto;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
@@ -11,8 +12,8 @@ public class Rsa {
         // sortear dois primos aleatórios bem grandes
         SecureRandom random = new SecureRandom();
         int bitLength = 8;
-        BigInteger p = new BigInteger(bitLength, 100, random);
-        BigInteger q = new BigInteger(bitLength, 100, random);
+        BigInteger p = generatePrime(bitLength,random);
+        BigInteger q = generatePrime(bitLength,random);
         while(p.compareTo(q) == 0){
             q = new BigInteger(bitLength,100,random);
         }
@@ -93,5 +94,32 @@ public class Rsa {
 
     public void setPublicKeyExterna(Chave publicKeyExterna) {
         this.publicKeyExterna = publicKeyExterna;
+    }
+
+    private static BigInteger generatePrime(int bitLength, SecureRandom random) {
+        BigInteger primeCandidate;
+        do {
+            // Gerar um número aleatório do tamanho especificado
+            primeCandidate = new BigInteger(bitLength, random);
+
+            // Verificar se o número gerado é ímpar (primo potencial)
+            if (!primeCandidate.testBit(0)) {
+                primeCandidate = primeCandidate.setBit(0); // Tornar ímpar
+            }
+        } while (!isProbablePrime(primeCandidate));
+
+        return primeCandidate;
+    }
+    private static boolean isProbablePrime(BigInteger n) {
+        // Verificar se o número é primo usando o teste de Miller-Rabin
+        return n.isProbablePrime(50);
+    }
+    public static void main(String[] args) throws UnsupportedEncodingException {
+        Rsa rsa = new Rsa();
+        Rsa rsa2 = new Rsa();
+        Cripto novo = new Cripto();
+        System.out.println(novo.aes.chave.getEncoded());
+        System.out.println(rsa.getPublicKey().valorDaChave + " : "+ rsa.getPublicKey().modulo);
+        System.out.println(rsa.getPrivateKey().valorDaChave + " : "+ rsa.getPrivateKey().modulo);
     }
 }

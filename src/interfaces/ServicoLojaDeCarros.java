@@ -15,8 +15,8 @@ public interface ServicoLojaDeCarros extends Remote{
 	byte[] listar(byte[] categoria) throws Exception;
 	byte[] atualizar(byte[] renavam, byte[] v) throws RemoteException;
 	byte[] deletar(byte[] v) throws Exception;
-	byte[] comprar(byte[] v) throws RemoteException;
-	byte[] getQuantidade() throws RemoteException;
+	byte[] comprar(byte[] v) throws Exception;
+	byte[] getQuantidade() throws Exception;
 	Chave trocaDeChavesRsa(Chave publicKey) throws  RemoteException;
 	byte[] requisitarChaveAes() throws IOException;
 	byte[] requisitarChaveHmac() throws IOException;

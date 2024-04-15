@@ -25,7 +25,6 @@ public class Cliente {
 		Cripto criptoAuth = new Cripto();
 		Cripto criptoLoja = new Cripto();
 		int usedPort;
-		// tem que ter a troca das chaves
 
 
 
@@ -44,27 +43,31 @@ public class Cliente {
 			criptoAuth.aes.reconstruirChave(chaveDecifrada);
 			// E por fim, o hmac
 			criptoAuth.chaveHmac = (String)criptoAuth.descriptografar(stub.requisitarChaveHmacAuth()).getMensagem();
+
 			while(keepRunning) {
 				keepLogged = true;
 				currentUser = menuInicial();
 				if(currentUser==null) {
 					break;
 				}
-				byte[] authResponse = stub.autenticar(criptoAuth.criptografar(new Mensagem(currentUser,
-						criptoAuth.assinarHash(criptoAuth.hMac(currentUser))))); // aqui eu tenho que criptografar
-				toMainMenu = (int) handleResponse(authResponse, criptoLoja);
+				byte[] authResponse = stub.autenticar(montarRequest(currentUser,criptoAuth)); // aqui eu tenho que criptografar
+				toMainMenu = (int) handleResponse(authResponse, criptoAuth);
+
 
 				// agora tem que trocar chaves com o serviço da loja
 				criptoLoja.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaLoja(criptoLoja.rsa.getPublicKey(), usedPort));
 
-				// em seguida, recebe a chave aes do serviço de autenticação
+				// em seguida, recebe a chave aes do serviço de loja
 				chaveCifradaBase64 = stub.requisitarChaveAesLoja(usedPort);
 				chaveCifrada = DadoCifrado.deserializar(Base64.decodificar(chaveCifradaBase64));
 				chaveDecifrada = criptoLoja.rsa.decifrar(
 						chaveCifrada, criptoLoja.rsa.getPrivateKey());
 				criptoLoja.aes.reconstruirChave(chaveDecifrada);
 				// E por fim, o hmac
-				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
+				Mensagem msgDecifrada = criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort));
+				criptoLoja.chaveHmac = (String) msgDecifrada.getMensagem();
+
+
 				if(toMainMenu==1) {
 					while(keepLogged) {
 						Mensagem msgDescriptograda;
@@ -93,8 +96,8 @@ public class Cliente {
 							Mensagem msg = new Mensagem(added, criptoLoja.assinarHash(criptoLoja.hMac(added)),
 									usedPort); // dado, hashAssinado, porta da réplica
 							reply = stub.adicionar(criptoLoja.criptografar(msg), usedPort);
-							descriptografado = (String) handleResponse(reply, criptoLoja);
-							System.out.println(descriptografado);
+							Veiculo v = (Veiculo) handleResponse(reply, criptoLoja);
+							System.out.println(v);
 							break;
 						case 2:
 							temp = buscarVeiculo();
@@ -116,8 +119,8 @@ public class Cliente {
 							reply = stub.listar(criptoLoja.criptografar(msg), usedPort);
 							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							if(temp!=null) {
-								for(Veiculo v : veiculos) {
-									System.out.println(v.toString());
+								for(Veiculo d : veiculos) {
+									System.out.println(d.toString());
 								}
 							}
 							break;
@@ -126,8 +129,8 @@ public class Cliente {
 							System.out.println("Digite o renavam do veiculo: ");
 							temp = s.nextLine();
 
-							Veiculo v = alterarVeiculo();
-							msg = new Mensagem(v, criptoLoja.assinarHash(criptoLoja.hMac(v)));
+							Veiculo vech = alterarVeiculo();
+							msg = new Mensagem(vech, criptoLoja.assinarHash(criptoLoja.hMac(vech)));
 							Mensagem msg2 = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.atualizar(criptoLoja.criptografar(msg2),
 									criptoLoja.criptografar(msg),usedPort);
@@ -311,7 +314,7 @@ public class Cliente {
 			e.printStackTrace();
 			}
 		}
-	
+
 	public static Credenciais menuInicial() {
 		String option;
 		System.out.println("Banco de Veículos: \n"
@@ -451,6 +454,12 @@ public class Cliente {
 		return vec;
 	}
 	public static void autenticar(Mensagem msg, Cripto cripto) throws Exception {
+		System.out.println(cripto.aes.chave);
+		System.out.println(cripto.rsa.getPrivateKey().valorDaChave + " " + cripto.rsa.getPrivateKey().modulo);
+		System.out.println(cripto.rsa.getPublicKey().valorDaChave + " " + cripto.rsa.getPublicKey().modulo);
+		System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave + " " + cripto.rsa.getPublicKeyExterna().modulo);
+		System.out.println(cripto.chaveHmac);
+
 		DadoCifrado hmacAssinado = msg.gethMacAssinado();
 		String hmac = cripto.verificarAssinatura(hmacAssinado);
 		if(!hmac.equals(cripto.hMac(msg.getMensagem()))) {
@@ -462,5 +471,7 @@ public class Cliente {
 		autenticar(msgDecifrada,cripto);
 		return msgDecifrada.getMensagem();
 	}
-
+	public static byte[] montarRequest(Object v, Cripto cripto) throws Exception {
+		return cripto.criptografar(new Mensagem(v,cripto.assinarHash(cripto.hMac(v))));
+	}
 }
