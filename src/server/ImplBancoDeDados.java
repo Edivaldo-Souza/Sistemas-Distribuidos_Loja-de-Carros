@@ -22,9 +22,9 @@ public class ImplBancoDeDados implements BancoDeDados{
 
 	public ImplBancoDeDados() throws UnsupportedEncodingException {
 		Chave chavePublica = new Chave();
-		chavePublica.modulo = new BigInteger("39917"); chavePublica.valorDaChave = new BigInteger("5");
+		chavePublica.modulo = new BigInteger("14857"); chavePublica.valorDaChave = new BigInteger("3");
 		Chave chavePrivada = new Chave();
-		chavePrivada.modulo = new BigInteger("39917"); chavePrivada.valorDaChave = new BigInteger("31613");
+		chavePrivada.modulo = new BigInteger("14857"); chavePrivada.valorDaChave = new BigInteger("9731");
 		this.cripto = new Cripto("mudjanoplijsd12k", chavePublica, chavePrivada);
 		this.cripto.chaveHmac = "kalsdcbasjd123oa";
 	}
