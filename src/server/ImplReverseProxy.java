@@ -69,7 +69,7 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (Exception e) {
             throw new RuntimeException(e);
         }
-		String reply = "Requisicao Invalida";
+		String reply = "Requisicao_Invalida";
 		return reply.getBytes();
 	}
 
@@ -124,7 +124,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		String reply = "Requisicao Invalida";
+		String reply = "Requisicao_Invalida";
 		return reply.getBytes();
 	}
 

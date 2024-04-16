@@ -1,12 +1,17 @@
 package model;
 
+import cripto.HashWithSalt;
+
 import java.io.Serializable;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 public class Credenciais implements Serializable {
 	private TipoDeUsuario tipo;
 	private String nome;
 	private String senha;
-	
+	private byte[] salt;
 	public Credenciais() {
 		
 	}
@@ -15,6 +20,14 @@ public class Credenciais implements Serializable {
 		this.tipo = tipo;
 		this.nome = nome;
 		this.senha = senha;
+	}
+
+	public byte[] getSalt() {
+		return salt;
+	}
+
+	public void setSalt(byte[] salt) {
+		this.salt = salt;
 	}
 
 	public TipoDeUsuario getTipo() {
@@ -41,12 +54,9 @@ public class Credenciais implements Serializable {
 		this.senha = senha;
 	}
 	
-	public boolean compareTo(Credenciais c) {
-		if(this.nome.equals(c.getNome()) && this.senha.equals(c.getSenha())) {
-			return true;
-		}
-		return false;
-	}
+	public boolean compareTo(Credenciais c) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+        return (this.nome.equals(c.getNome()) && this.senha.equals(c.getSenha()) );
+    }
 	
 	
 }
