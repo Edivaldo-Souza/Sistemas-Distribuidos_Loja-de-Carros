@@ -26,7 +26,7 @@ public class Cliente {
 		Cripto criptoLoja = new Cripto();
 		int usedPort;
 		String connection;
-
+		int tentativas = 0;
 		System.setProperty("java.security.policy", "java.policy");
 		try {
 			Registry registro = LocateRegistry.getRegistry(host, 2000);
@@ -68,7 +68,10 @@ public class Cliente {
 				criptoLoja.aes.reconstruirChave(chaveDecifrada);
 				// E por fim, o hmac
 				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
+
+
 				if(toMainMenu==1) {
+					tentativas = 0;
 					while(keepLogged) {
 						Mensagem msgDescriptograda;
 						String option,temp, descriptografado;
@@ -207,6 +210,7 @@ public class Cliente {
 
 				}
 				else if(toMainMenu==0) {
+					tentativas = 0;
 					while(keepLogged) {
 
 						Mensagem msgDescriptograda, msg;
@@ -294,6 +298,12 @@ public class Cliente {
 							System.out.println("Opcao Invalida! Tente denovo");
 							break;
 						}
+					}
+				} if(toMainMenu == 2){
+					tentativas++;
+					if(tentativas == 3){
+						System.out.println("Você excedeu seu limite de tentativas de login, aguarde 10 segundos.");
+						Thread.sleep(10000);
 					}
 				}
 			}
