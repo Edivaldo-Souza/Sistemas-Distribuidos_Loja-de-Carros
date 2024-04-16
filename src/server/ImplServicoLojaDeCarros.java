@@ -362,4 +362,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	public static byte[] montarRequest(Object v, Cripto cripto) throws Exception {
 		return cripto.criptografar(new Mensagem(v,cripto.assinarHash(cripto.hMac(v))));
 	}
+
+	@Override
+	public Cripto getCripto() throws RemoteException {
+		
+		return this.cripto;
+	}
+	
 }

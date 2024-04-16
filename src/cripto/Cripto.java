@@ -3,12 +3,17 @@ package cripto;
 import model.Mensagem;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 
 
-public class Cripto {
-    // classe que engloba todas as etapas de encriptação do trabalho.
+public class Cripto implements Serializable{
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	// classe que engloba todas as etapas de encriptação do trabalho.
     public AES aes;
     public String chaveHmac;
     public Rsa rsa;

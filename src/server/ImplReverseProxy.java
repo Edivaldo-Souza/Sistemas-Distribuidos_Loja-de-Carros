@@ -67,7 +67,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (Exception e) {
-            throw new RuntimeException(e);
+            //throw new RuntimeException(e);
         }
 		String reply = "Requisicao_Invalida";
 		return reply.getBytes();
@@ -280,6 +280,20 @@ public class ImplReverseProxy implements ReverseProxy{
 		ServicoLojaDeCarros stub = (ServicoLojaDeCarros)
 				Naming.lookup("//localhost:"+port+"/ServicoLojaDeCarros");
 		return stub.requisitarChaveHmac();
+	}
+
+	@Override
+	public Cripto getCripto() throws RemoteException {
+		try {
+			ServicoLojaDeCarros stub = (ServicoLojaDeCarros)
+					Naming.lookup("//localhost:2000/ServicoLojaDeCarros");
+			return stub.getCripto();
+		} catch (MalformedURLException | RemoteException | NotBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return null;
 	}
 
 }

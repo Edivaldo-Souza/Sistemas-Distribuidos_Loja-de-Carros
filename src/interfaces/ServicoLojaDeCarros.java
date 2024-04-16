@@ -6,6 +6,7 @@ import java.rmi.RemoteException;
 import java.util.List;
 
 import cripto.Chave;
+import cripto.Cripto;
 import cripto.DadoCifrado;
 import model.Veiculo;
 
@@ -20,4 +21,5 @@ public interface ServicoLojaDeCarros extends Remote{
 	Chave trocaDeChavesRsa(Chave publicKey) throws  RemoteException;
 	byte[] requisitarChaveAes() throws IOException;
 	byte[] requisitarChaveHmac() throws IOException;
+	Cripto getCripto() throws  RemoteException;
 }

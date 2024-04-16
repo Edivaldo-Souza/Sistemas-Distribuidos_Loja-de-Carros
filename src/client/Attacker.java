@@ -12,7 +12,7 @@ import cripto.Chave;
 import cripto.Cripto;
 import model.*;
 
-public class Cliente {
+public class Attacker {
 	private static Scanner s = new Scanner(System.in);
 	
 	public static void main(String[] args) {
@@ -34,7 +34,7 @@ public class Cliente {
 			usedPort = stub.getClientPort();
 			stub.setClientPort(usedPort+1);
 
-			connection = "//"+host+":"+usedPort+"/ServicoLojaDeCarros";
+			connection = "//"+host+":2000/ServicoLojaDeCarros";
 			
 			// antes do login, ele troca a chave rsa com o serviço de autenticacao
 			criptoAuth.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaAuth(criptoAuth.rsa.getPublicKey()));
@@ -68,6 +68,8 @@ public class Cliente {
 				criptoLoja.aes.reconstruirChave(chaveDecifrada);
 				// E por fim, o hmac
 				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
+				
+				criptoLoja = stub.getCripto();
 				if(toMainMenu==1) {
 					while(keepLogged) {
 						Mensagem msgDescriptograda;

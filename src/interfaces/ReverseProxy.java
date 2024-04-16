@@ -8,6 +8,7 @@ import java.rmi.RemoteException;
 import java.util.List;
 
 import cripto.Chave;
+import cripto.Cripto;
 import model.Credenciais;
 import model.Veiculo;
 
@@ -32,4 +33,5 @@ public interface ReverseProxy extends Remote{
 	byte[] requisitarChaveAesLoja(int port) throws IOException, NotBoundException;
 	byte[] requisitarChaveHmacAuth() throws IOException, NotBoundException;
 	byte[] requisitarChaveHmacLoja(int port) throws IOException, NotBoundException;
+	Cripto getCripto() throws RemoteException; 
 }
