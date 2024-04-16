@@ -15,6 +15,7 @@ import interfaces.Autenticador;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Credenciais;
+import model.Mensagem;
 import model.Veiculo;
 
 public class ImplReverseProxy implements ReverseProxy{
@@ -125,7 +126,14 @@ public class ImplReverseProxy implements ReverseProxy{
 			e.printStackTrace();
 		}
 		String reply = "Requisicao_Invalida";
-		return reply.getBytes();
+		try {
+			System.out.println("Get here");
+			 return cripto.criptografar(new Mensagem(reply,cripto.assinarHash(cripto.hMac(reply))));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	@Override

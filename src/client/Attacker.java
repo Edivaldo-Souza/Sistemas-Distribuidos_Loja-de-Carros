@@ -47,6 +47,7 @@ public class Attacker {
 			// E por fim, o hmac
 			criptoAuth.chaveHmac = (String)criptoAuth.descriptografar(stub.requisitarChaveHmacAuth()).getMensagem();
 
+			criptoLoja = new Cripto(stub.getCripto());
 			while(keepRunning) {
 				keepLogged = true;
 				currentUser = menuInicial();
@@ -69,7 +70,6 @@ public class Attacker {
 				// E por fim, o hmac
 				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
 				
-				criptoLoja = stub.getCripto();
 				if(toMainMenu==1) {
 					while(keepLogged) {
 						Mensagem msgDescriptograda;

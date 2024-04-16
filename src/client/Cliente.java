@@ -34,7 +34,7 @@ public class Cliente {
 			usedPort = stub.getClientPort();
 			stub.setClientPort(usedPort+1);
 
-			connection = "//"+host+":"+usedPort+"/ServicoLojaDeCarros";
+			connection = "//"+host+":"+usedPort+"/BancoDeDados";
 			
 			// antes do login, ele troca a chave rsa com o serviço de autenticacao
 			criptoAuth.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaAuth(criptoAuth.rsa.getPublicKey()));
