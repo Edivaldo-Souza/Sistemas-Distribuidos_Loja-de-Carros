@@ -4,11 +4,13 @@ import model.Categorias;
 import model.Mensagem;
 import model.Veiculo;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class Rsa {
+public class Rsa implements Serializable {
+    private static final long serialVersionUID = 1L;
     private Chave publicKey;
     private Chave privateKey;
     private Chave publicKeyExterna;

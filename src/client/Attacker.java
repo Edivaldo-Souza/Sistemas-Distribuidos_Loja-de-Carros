@@ -35,48 +35,17 @@ public class Attacker {
 			stub.setClientPort(usedPort+1);
 
 			connection = "//"+host+":2000/ServicoLojaDeCarros";
-			
-			// antes do login, ele troca a chave rsa com o serviço de autenticacao
-			criptoAuth.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaAuth(criptoAuth.rsa.getPublicKey()));
-			// em seguida, recebe a chave aes do serviço de autenticação
-			byte[] chaveCifradaBase64 = stub.requisitarChaveAesAuth();
-			DadoCifrado chaveCifrada = DadoCifrado.deserializar(Base64.decodificar(chaveCifradaBase64));
-			byte[] chaveDecifrada = criptoAuth.rsa.decifrar(
-					chaveCifrada, criptoAuth.rsa.getPrivateKey());
-			criptoAuth.aes.reconstruirChave(chaveDecifrada);
-			// E por fim, o hmac
-			criptoAuth.chaveHmac = (String)criptoAuth.descriptografar(stub.requisitarChaveHmacAuth()).getMensagem();
-
 			while(keepRunning) {
 				keepLogged = true;
-				currentUser = menuInicial();
-				if(currentUser==null) {
-					break;
-				}
-				byte[] authResponse = stub.autenticar(montarRequest(currentUser,criptoAuth)); // aqui eu tenho que criptografar
-				toMainMenu = (int) handleResponse(authResponse, criptoAuth);
-
-
-				// agora tem que trocar chaves com o serviço da loja
-				criptoLoja.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaLoja(criptoLoja.rsa.getPublicKey(), usedPort));
-
-				// em seguida, recebe a chave aes do serviço de loja
-				chaveCifradaBase64 = stub.requisitarChaveAesLoja(usedPort);
-				chaveCifrada = DadoCifrado.deserializar(Base64.decodificar(chaveCifradaBase64));
-				chaveDecifrada = criptoLoja.rsa.decifrar(
-						chaveCifrada, criptoLoja.rsa.getPrivateKey());
-				criptoLoja.aes.reconstruirChave(chaveDecifrada);
-				// E por fim, o hmac
-				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
-				
 				criptoLoja = stub.getCripto();
+				toMainMenu = 1;
 				if(toMainMenu==1) {
 					while(keepLogged) {
 						Mensagem msgDescriptograda;
 						String option,temp, descriptografado;
 						byte[] reply;
 						
-						System.out.println("\nBem vindo Funcionario "+currentUser.getNome()+" !\n"
+						System.out.println("\nBem vindo" + "!\n"
 								+ "Banco de Veículos: \n"
 								+ "1 - Adicionar Veiculo\n"
 								+ "2 - Buscar Veiculo\n"
@@ -96,6 +65,10 @@ public class Attacker {
 						case 1:
 							Veiculo added = adicionarVeiculo();
 							reply = stub.adicionar(montarRequest(added,criptoLoja), connection);
+							System.out.println(criptoLoja.aes.chave);
+							System.out.println(criptoLoja.rsa.getPublicKeyExterna().valorDaChave);
+							System.out.println(criptoLoja.rsa.getPublicKey().valorDaChave);
+							System.out.println(criptoLoja.rsa.getPrivateKey().valorDaChave);
 							Veiculo v = (Veiculo) handleResponse(reply, criptoLoja);
 							System.out.println(v);
 							break;
@@ -214,7 +187,7 @@ public class Attacker {
 						Mensagem msgDescriptograda, msg;
 						String option,temp, descriptografado;
 						byte[] reply;
-						System.out.println("\nBem vindo Cliente "+currentUser.getNome()+" !\n"
+						System.out.println("\nBem vindo"+"!\n"
 								+ "Banco de Veículos: \n"
 								+ "1 - Buscar Veiculo\n"
 								+ "2 - Listar Veiculos\n"

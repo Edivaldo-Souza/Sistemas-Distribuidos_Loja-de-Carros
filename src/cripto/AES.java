@@ -3,17 +3,14 @@ package cripto;
 import model.Mensagem;
 
 import javax.crypto.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.spec.SecretKeySpec;
-public class AES {
+public class AES implements Serializable {
+    private static final long serialVersionUID = 1L;
     public SecretKey chave;
-    private KeyGenerator geradorDeChaves;
     public AES(SecretKey chave) throws UnsupportedEncodingException {
         this.chave = chave;
     }
@@ -22,7 +19,7 @@ public class AES {
     }
     public void gerarChave() {
         try {
-            geradorDeChaves = KeyGenerator
+            KeyGenerator geradorDeChaves = KeyGenerator
                     .getInstance("AES");
             chave = geradorDeChaves
                     .generateKey();

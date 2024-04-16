@@ -92,4 +92,12 @@ public class ImplBancoDeDados implements BancoDeDados{
 		autenticar(msgDecifrada, cripto);
 		return msgDecifrada.getMensagem();
 	}
+
+	public Cripto getCripto() {
+		return cripto;
+	}
+
+	public void setCripto(Cripto cripto) {
+		this.cripto = cripto;
+	}
 }

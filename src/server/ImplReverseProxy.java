@@ -12,6 +12,7 @@ import java.rmi.server.UnicastRemoteObject;
 import cripto.Chave;
 import cripto.Cripto;
 import interfaces.Autenticador;
+import interfaces.BancoDeDados;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Credenciais;
@@ -189,18 +190,24 @@ public class ImplReverseProxy implements ReverseProxy{
 		try {
 			ImplReverseProxy refObjRemoto = new ImplReverseProxy();
 			ImplAutenticador refObjRemotoAuth = new ImplAutenticador();
+			ImplBancoDeDados bd = new ImplBancoDeDados();
 			ImplServicoLojaDeCarros refObjRemotoLoja = new ImplServicoLojaDeCarros();
+			refObjRemotoLoja.setUsedPort(2000);
+			refObjRemotoLoja.setCriptoDatabase(bd.getCripto());
+			refObjRemotoLoja.getCriptoDatabase().rsa.setPublicKeyExterna(bd.getCripto().rsa.getPublicKey());
+			bd.getCripto().rsa.setPublicKeyExterna(refObjRemotoLoja.getCriptoDatabase().rsa.getPublicKey());
 			ReverseProxy skeleton = (ReverseProxy) UnicastRemoteObject.exportObject(refObjRemoto, 0);
 			Autenticador skeletonAuth = (Autenticador) UnicastRemoteObject.exportObject(refObjRemotoAuth,8000);
 			ServicoLojaDeCarros skeletonLoja = 
 					(ServicoLojaDeCarros) UnicastRemoteObject.exportObject(refObjRemotoLoja,8001);
-			
+			BancoDeDados skeletonBD =
+					(BancoDeDados) UnicastRemoteObject.exportObject(bd,8099);
 			LocateRegistry.createRegistry(2000);
 			Registry reg = LocateRegistry.getRegistry(2000);
 			reg.bind("ReverseProxy", skeleton);
 			reg.bind("Autenticador", skeletonAuth);
 			reg.bind("ServicoLojaDeCarros", skeletonLoja);
-			
+			reg.bind("BancoDeDados", skeletonBD);
 		} catch (Exception e) {
 			System.err.println("Servidor: " + e.toString());
 			e.printStackTrace();
