@@ -2,11 +2,12 @@ package server;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 
-import cripto.Base64;
-import cripto.Chave;
-import cripto.Cripto;
-import cripto.DadoCifrado;
+import cripto.*;
 import interfaces.Autenticador;
 import model.Credenciais;
 import model.Mensagem;
@@ -15,28 +16,40 @@ import model.TipoDeUsuario;
 
 public class ImplAutenticador implements Autenticador{
 	private Cripto cripto;
-	public ImplAutenticador(){
+	private ArrayList<Credenciais> contas;
+	public ImplAutenticador() throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
 		this.cripto = new Cripto("okay54232ikakjll");
+		this.contas = new ArrayList<>();
+		Credenciais c1 = new Credenciais(TipoDeUsuario.CLIENTE,"Joao","12345");
+		Credenciais c2 = new Credenciais(TipoDeUsuario.CLIENTE,"Maria","54321");
+		Credenciais c3 = new Credenciais(TipoDeUsuario.FUNCIONARIO,"Pablo","67890");
+		c1.setSenha(HashWithSalt.getHashSenhaSegura(c1));
+		c2.setSenha(HashWithSalt.getHashSenhaSegura(c2));
+		c3.setSenha(HashWithSalt.getHashSenhaSegura(c3));
+		contas.add(c1);
+		contas.add(c2);
+		contas.add(c3);
 	}
 	
 	@Override
 	public byte[] autenticar(byte[] dadosC) throws Exception {
-		Credenciais c1 = new Credenciais(TipoDeUsuario.CLIENTE,"Joao","12345");
-		Credenciais c2 = new Credenciais(TipoDeUsuario.CLIENTE,"Maria","54321");
-		Credenciais c3 = new Credenciais(TipoDeUsuario.FUNCIONARIO,"Pablo","67890");
-		Credenciais[] credenciais = {c1,c2,c3};
 		Credenciais c = (Credenciais) handleRequest(dadosC,cripto);
-		for(Credenciais cred : credenciais) {
-			if(c.compareTo(cred)) {
+		for(Credenciais cred : this.contas) {
+			c.setSalt(cred.getSalt());
+			Credenciais temp = new Credenciais();
+			temp.setNome(c.getNome());
+            temp.setSenha(HashWithSalt.getHashSenhaSegura(c));
+			boolean isEqual = cred.compareTo(temp);
+			if(isEqual) {
 				if(cred.getTipo()==TipoDeUsuario.FUNCIONARIO) {
 					return montarRequest(1,cripto);
 				}
 				return montarRequest(0,cripto);
 			}
 		}
-		
 		return montarRequest(2,cripto);
 	}
+
 
 	@Override
 	public Chave trocaDeChavesRsa(Chave publicKey) throws RemoteException {

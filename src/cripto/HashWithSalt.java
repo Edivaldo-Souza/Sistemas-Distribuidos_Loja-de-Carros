@@ -1,5 +1,8 @@
 package cripto;
 
+import model.Credenciais;
+import model.TipoDeUsuario;
+
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.security.InvalidKeyException;
@@ -8,14 +11,16 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 
 public class HashWithSalt {
-    public static String getHashSenhaSegura(String senha)
+    public static String getHashSenhaSegura(Credenciais conta)
             throws NoSuchAlgorithmException,
             InvalidKeyException,InvalidKeySpecException {
         int iteracoes = 500000;
-        char[] caracteresSenha = senha.toCharArray();
-        byte[] salt = getSalt();
+        char[] caracteresSenha = conta.getSenha().toCharArray();
+        if(conta.getSalt() == null){
+            conta.setSalt(getSalt());
+        }
         PBEKeySpec spec =
-                new PBEKeySpec(caracteresSenha, salt, iteracoes, 512);
+                new PBEKeySpec(caracteresSenha, conta.getSalt(), iteracoes, 512);
         SecretKeyFactory skf = SecretKeyFactory
                 .getInstance("PBKDF2WithHmacSHA1");
         byte[] hash = skf.generateSecret(spec).getEncoded();
@@ -33,23 +38,5 @@ public class HashWithSalt {
             strHex.append(String.format("%02x", b));
         }
         return strHex.toString();
-    }
-    public static void execute(String s1, String s2)
-            throws NoSuchAlgorithmException,
-            InvalidKeyException, InvalidKeySpecException {
-        String hashSenha1 = HashWithSalt.getHashSenhaSegura(s1);
-        String hashSenha2 = HashWithSalt.getHashSenhaSegura(s2);
-        System.out.println("Senha 1: " + hashSenha1);
-        System.out.println("Senha 2: " + hashSenha2);
-        if (hashSenha1.equals(hashSenha2)) {
-            System.out.println("senhas iguais...");
-        }else{
-            System.out.println("senhas diferentes...");
-        }
-    }
-    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
-        String senha1 = "senhaboa", senha2 = "senhaboa";
-        System.out.println("Hash de com PBKDF2 em Java = \n");
-        HashWithSalt.execute(senha1, senha2);
     }
 }
