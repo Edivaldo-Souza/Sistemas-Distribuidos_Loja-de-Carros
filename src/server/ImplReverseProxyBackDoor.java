@@ -17,22 +17,20 @@ import interfaces.ServicoLojaDeCarros;
 import model.Credenciais;
 import model.Veiculo;
 
-public class ImplReverseProxy implements ReverseProxy{
+public class ImplReverseProxyBackDoor implements ReverseProxy{
 	public int servicePort = 2001;
 	public int clientPort = 2001;
 	private Cripto cripto;
 	public int individualsPorts = 8002;
 	
-	public ImplReverseProxy() {
+	public ImplReverseProxyBackDoor() {
 		this.cripto = new Cripto();
 	}
 	
 	public boolean verificarRequisicao(String req) {
 		String temp = req.split(":")[1].split("/")[1];
 		if(temp.equals("ServicoLojaDeCarros")) return true;
-		else if(temp.equals("BancoDeDados")) return false;
-		else if(temp.equals("ReverseProxy")) return false;
-		else return false;
+		else return true;
 	}
 	
 	@Override
@@ -187,7 +185,7 @@ public class ImplReverseProxy implements ReverseProxy{
 	
 	public static void main(String[] args) {
 		try {
-			ImplReverseProxy refObjRemoto = new ImplReverseProxy();
+			ImplReverseProxyBackDoor refObjRemoto = new ImplReverseProxyBackDoor();
 			ImplAutenticador refObjRemotoAuth = new ImplAutenticador();
 			ImplServicoLojaDeCarros refObjRemotoLoja = new ImplServicoLojaDeCarros();
 			ReverseProxy skeleton = (ReverseProxy) UnicastRemoteObject.exportObject(refObjRemoto, 0);

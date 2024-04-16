@@ -11,4 +11,5 @@ module praticaOffline03_SD {
 	requires java.rmi;
     requires jdk.jdi;
     exports cripto;
+	exports model;
 }

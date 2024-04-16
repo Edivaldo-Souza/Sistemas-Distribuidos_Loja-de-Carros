@@ -36,9 +36,9 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	public ImplServicoLojaDeCarros() throws UnsupportedEncodingException {
 		this.cripto = new Cripto("kalo54232bcaa111");
 		Chave chavePublica = new Chave();
-		chavePublica.modulo = new BigInteger("899"); chavePublica.valorDaChave = new BigInteger("611");
+		chavePublica.modulo = new BigInteger("8909"); chavePublica.valorDaChave = new BigInteger("7");
 		Chave chavePrivada = new Chave();
-		chavePrivada.modulo = new BigInteger("899"); chavePrivada.valorDaChave = new BigInteger("11");
+		chavePrivada.modulo = new BigInteger("8909"); chavePrivada.valorDaChave = new BigInteger("1243");
 		this.criptoDatabase = new Cripto("[B@29ca901ejdh1u", chavePublica, chavePrivada);
 
 	}
@@ -64,11 +64,6 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
 				rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 			}
-			System.out.println(cripto.aes.chave);
-			System.out.println(cripto.rsa.getPrivateKey().valorDaChave + " " + cripto.rsa.getPrivateKey().modulo);
-			System.out.println(cripto.rsa.getPublicKey().valorDaChave + " " + cripto.rsa.getPublicKey().modulo);
-			System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave + " " + cripto.rsa.getPublicKeyExterna().modulo);
-			System.out.println(cripto.chaveHmac);
 			byte[] dadosNv = stub.add(montarRequest(v,criptoDatabase));
 			Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
 			rep2.add(montarRequest(v,criptoDatabase));
@@ -83,7 +78,6 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	@Override
 	public byte[] buscar(byte[] dados) throws Exception {
 		BancoDeDados stub;
-		System.out.println(cripto.aes.chave);
 		String renavam = (String) handleRequest(dados,cripto);
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
@@ -105,7 +99,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	}
 	@Override
 	public byte[] listar(byte[] dados) throws Exception {
-		List<Veiculo> resultado = new ArrayList<Veiculo>();
+		List<Veiculo> resultado = new ArrayList<>();
 		String categoria = (String) handleRequest(dados,cripto);
 		try {
 			BancoDeDados stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
@@ -286,7 +280,6 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	}
 
 	public byte[] requisitarChaveHmac() throws IOException {
-		System.out.println("Tá chegando aqui?");
 		return cripto.criptografar(new Mensagem(cripto.chaveHmac));
 	}
 

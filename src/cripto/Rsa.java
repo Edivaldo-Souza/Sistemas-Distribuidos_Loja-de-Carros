@@ -1,5 +1,9 @@
 package cripto;
 
+import model.Categorias;
+import model.Mensagem;
+import model.Veiculo;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -11,37 +15,23 @@ public class Rsa {
     public Rsa(){
         // sortear dois primos aleatórios bem grandes
         SecureRandom random = new SecureRandom();
-        int bitLength = 8;
-        BigInteger p = generatePrime(bitLength,random);
-        BigInteger q = generatePrime(bitLength,random);
+        int bitLength = 4;
+        BigInteger p = BigInteger.probablePrime(bitLength,random);
+        BigInteger q = BigInteger.probablePrime(bitLength,random);
         while(p.compareTo(q) == 0){
-            q = new BigInteger(bitLength,100,random);
+            q = BigInteger.probablePrime(bitLength,random);
         }
         BigInteger n = p.multiply(q);
-
-        BigInteger phi = p.subtract(BigInteger.ONE).multiply(q.subtract(BigInteger.ONE));
-        BigInteger e = gerarChavePublica(phi);
-        BigInteger d = gerarChavePrivada(e,phi);
+        BigInteger phi = (p.subtract(BigInteger.ONE)).multiply(q.subtract(BigInteger.ONE));
+        BigInteger e = BigInteger.TWO;
+        while(phi.gcd(e).compareTo(BigInteger.ONE) != 0 && e.compareTo(phi)<0) {
+            e = e.add(BigInteger.ONE);
+        }
+        BigInteger d = e.modInverse(phi);
         this.privateKey = new Chave(d, n); // a chave privada é {d,n}
         this.publicKey = new Chave(e, n); // a chave publica é {e,n}
     }
-    public static BigInteger gerarChavePublica(BigInteger phi){
-        BigInteger coprime = new BigInteger("1");
-        do{
-            coprime = coprime.add(BigInteger.ONE);
-        } while(coprime.gcd(phi).compareTo(BigInteger.ONE) != 0); // compareTo retorna zero quando são iguais
-        return coprime;
-    }
-    public BigInteger gerarChavePrivada(BigInteger e, BigInteger phi){
-        BigInteger d = new BigInteger("1");
-        while (true){
-            if (e.multiply(d).mod(phi).compareTo(BigInteger.ONE) == 0){ // e * d % phi == 1
-                break;
-            }
-            d = d.add(BigInteger.ONE);
-        }
-        return d;
-    }
+
     public DadoCifrado cifrar(byte[] mensagem, Chave chave){
         DadoCifrado cifrado = new DadoCifrado(mensagem.length);
         int i = 0;
@@ -54,7 +44,7 @@ public class Rsa {
                 cifrado.sinais[i] = true;
             }
             cifrado.valores[i] = temp.modPow(chave.valorDaChave,chave.modulo);
-            i++;
+                i++;
         }
         return cifrado;
     }
@@ -95,31 +85,26 @@ public class Rsa {
     public void setPublicKeyExterna(Chave publicKeyExterna) {
         this.publicKeyExterna = publicKeyExterna;
     }
+    public static void main(String[] args) throws Exception {
+        Cripto cripto = new Cripto();
+        Cripto cripto2 = new Cripto("123456789jsadscj");
+        cripto2.rsa.setPublicKeyExterna(cripto.rsa.getPublicKey());
+        cripto.rsa.setPublicKeyExterna(cripto2.rsa.getPublicKey());
+        cripto.chaveHmac = cripto2.chaveHmac;
+        cripto.aes.reconstruirChave(cripto2.aes.chave.getEncoded());
+        //        Veiculo text = new Veiculo(Categorias.ECONOMICO,"32","ksd",2022,9202.2);
+        String text = "osajdad";
 
-    private static BigInteger generatePrime(int bitLength, SecureRandom random) {
-        BigInteger primeCandidate;
-        do {
-            // Gerar um número aleatório do tamanho especificado
-            primeCandidate = new BigInteger(bitLength, random);
+        byte[] dado = cripto2.criptografar(new Mensagem(text,cripto2.assinarHash(cripto2.hMac(text))));
 
-            // Verificar se o número gerado é ímpar (primo potencial)
-            if (!primeCandidate.testBit(0)) {
-                primeCandidate = primeCandidate.setBit(0); // Tornar ímpar
-            }
-        } while (!isProbablePrime(primeCandidate));
+        Mensagem desc = cripto.descriptografar(dado);
 
-        return primeCandidate;
-    }
-    private static boolean isProbablePrime(BigInteger n) {
-        // Verificar se o número é primo usando o teste de Miller-Rabin
-        return n.isProbablePrime(50);
-    }
-    public static void main(String[] args) throws UnsupportedEncodingException {
-        Rsa rsa = new Rsa();
-        Rsa rsa2 = new Rsa();
-        Cripto novo = new Cripto();
-        System.out.println(novo.aes.chave.getEncoded());
-        System.out.println(rsa.getPublicKey().valorDaChave + " : "+ rsa.getPublicKey().modulo);
-        System.out.println(rsa.getPrivateKey().valorDaChave + " : "+ rsa.getPrivateKey().modulo);
+        System.out.println(desc.getMensagem());
+        System.out.println(desc.gethMacAssinado());
+        System.out.println(cripto2.hMac(text));
+        System.out.println(cripto.verificarAssinatura(desc.gethMacAssinado()));
+
+
+
     }
 }

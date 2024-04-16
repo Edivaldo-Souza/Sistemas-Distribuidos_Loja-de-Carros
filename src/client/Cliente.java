@@ -32,6 +32,9 @@ public class Cliente {
 			ReverseProxy stub = (ReverseProxy) registro.lookup("ReverseProxy");
 			usedPort = stub.getClientPort();
 			stub.setClientPort(usedPort+1);
+
+			connection = "//"+host+":"+usedPort+"/ServicoLojaDeCarros";
+			
 			// antes do login, ele troca a chave rsa com o serviço de autenticacao
 			criptoAuth.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaAuth(criptoAuth.rsa.getPublicKey()));
 			// em seguida, recebe a chave aes do serviço de autenticação
@@ -63,10 +66,7 @@ public class Cliente {
 						chaveCifrada, criptoLoja.rsa.getPrivateKey());
 				criptoLoja.aes.reconstruirChave(chaveDecifrada);
 				// E por fim, o hmac
-				Mensagem msgDecifrada = criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort));
-				criptoLoja.chaveHmac = (String) msgDecifrada.getMensagem();
-
-
+				criptoLoja.chaveHmac = (String)criptoLoja.descriptografar(stub.requisitarChaveHmacLoja(usedPort)).getMensagem();
 				if(toMainMenu==1) {
 					while(keepLogged) {
 						Mensagem msgDescriptograda;
@@ -92,17 +92,14 @@ public class Cliente {
 						switch(num) {
 						case 1:
 							Veiculo added = adicionarVeiculo();
-							Mensagem msg = new Mensagem(added, criptoLoja.assinarHash(criptoLoja.hMac(added)),
-									usedPort); // dado, hashAssinado, porta da réplica
-							reply = stub.adicionar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.adicionar(montarRequest(added,criptoLoja), connection);
 							Veiculo v = (Veiculo) handleResponse(reply, criptoLoja);
 							System.out.println(v);
 							break;
 						case 2:
 							temp = buscarVeiculo();
 							cont = 0;
-							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.buscar(montarRequest(temp,criptoLoja), connection);
 							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
@@ -114,8 +111,7 @@ public class Cliente {
 							break;
 						case 3:
 							temp = listarVeiculos();
-							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.listar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.listar(montarRequest(temp,criptoLoja), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							if(temp!=null) {
 								for(Veiculo d : veiculos) {
@@ -129,10 +125,8 @@ public class Cliente {
 							temp = s.nextLine();
 
 							Veiculo vech = alterarVeiculo();
-							msg = new Mensagem(vech, criptoLoja.assinarHash(criptoLoja.hMac(vech)));
-							Mensagem msg2 = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.atualizar(criptoLoja.criptografar(msg2),
-									criptoLoja.criptografar(msg),usedPort);
+							reply = stub.atualizar(montarRequest(temp,criptoLoja),
+									montarRequest(vech,criptoLoja),connection);
 							Veiculo novoVec = (Veiculo) handleResponse(reply, criptoLoja);
 							if(novoVec!=null) {
 								System.out.println(novoVec.toString());
@@ -146,8 +140,7 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.buscar(montarRequest(temp,criptoLoja), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
@@ -160,8 +153,7 @@ public class Cliente {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
 								s.nextLine();
-								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-								reply = stub.deletar(criptoLoja.criptografar(msg),usedPort);
+								reply = stub.deletar(montarRequest(temp,criptoLoja),connection);
 								boolean retorno = (boolean) handleResponse(reply, criptoLoja);
 								if(retorno) {
 									System.out.println("Removido com sucesso");
@@ -176,8 +168,7 @@ public class Cliente {
 							s.nextLine();
 
 							cont = 0;
-							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.buscar(criptoLoja.criptografar(msg),usedPort);
+							reply = stub.buscar(montarRequest(temp,criptoLoja),connection);
 							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
@@ -189,8 +180,7 @@ public class Cliente {
 							else {
 								System.out.println("Informe o renavam do veiculo desejado: ");
 								temp = s.nextLine();
-								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-								reply = stub.comprar(criptoLoja.criptografar(msg), usedPort);
+								reply = stub.comprar(montarRequest(temp,criptoLoja), connection);
 								boolean retornoCompra = (boolean) handleResponse(reply,criptoLoja);
 								s.nextLine();
 								if(retornoCompra) {
@@ -201,7 +191,7 @@ public class Cliente {
 							break;
 
 						case 7:
-							reply = stub.getQuantidade(usedPort);
+							reply = stub.getQuantidade(connection);
 							int quantidade = (int) handleResponse(reply,criptoLoja);
 							System.out.println("Total de veiculos: "+quantidade);
 							break;
@@ -239,7 +229,7 @@ public class Cliente {
 							temp = buscarVeiculo();
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.buscar(criptoLoja.criptografar(msg), connection);
 							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
@@ -253,7 +243,7 @@ public class Cliente {
 							temp = listarVeiculos();
 							if(temp!=null) {
 								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-								reply = stub.listar(criptoLoja.criptografar(msg), usedPort);
+								reply = stub.listar(criptoLoja.criptografar(msg), connection);
 								veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 								for(Veiculo v : veiculos) {
 									System.out.println(v.toString());
@@ -268,7 +258,7 @@ public class Cliente {
 
 							cont = 0;
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-							reply = stub.buscar(criptoLoja.criptografar(msg), usedPort);
+							reply = stub.buscar(criptoLoja.criptografar(msg), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
 							for(Veiculo c: veiculos) {
 								cont++;
@@ -282,7 +272,7 @@ public class Cliente {
 								temp = s.nextLine();
 								s.nextLine();
 								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
-								reply = stub.comprar(criptoLoja.criptografar(msg), usedPort);
+								reply = stub.comprar(criptoLoja.criptografar(msg), connection);
 								boolean retornoCompra = (boolean) handleResponse(reply,criptoLoja);
 								if(retornoCompra) {
 									System.out.println("Compra realizada!");
@@ -292,7 +282,7 @@ public class Cliente {
 							break;
 
 						case 4:
-							reply = stub.getQuantidade(usedPort);
+							reply = stub.getQuantidade(connection);
 							int quantidade = (int) handleResponse(reply,criptoLoja);
 							System.out.println("Total de veiculos: "+quantidade);
 							break;
@@ -453,12 +443,6 @@ public class Cliente {
 		return vec;
 	}
 	public static void autenticar(Mensagem msg, Cripto cripto) throws Exception {
-		System.out.println(cripto.aes.chave);
-		System.out.println(cripto.rsa.getPrivateKey().valorDaChave + " " + cripto.rsa.getPrivateKey().modulo);
-		System.out.println(cripto.rsa.getPublicKey().valorDaChave + " " + cripto.rsa.getPublicKey().modulo);
-		System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave + " " + cripto.rsa.getPublicKeyExterna().modulo);
-		System.out.println(cripto.chaveHmac);
-
 		DadoCifrado hmacAssinado = msg.gethMacAssinado();
 		String hmac = cripto.verificarAssinatura(hmacAssinado);
 		if(!hmac.equals(cripto.hMac(msg.getMensagem()))) {

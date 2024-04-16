@@ -17,9 +17,6 @@ public class ImplAutenticador implements Autenticador{
 	private Cripto cripto;
 	public ImplAutenticador(){
 		this.cripto = new Cripto("okay54232ikakjll");
-		System.out.println("Chave aes :" + cripto.aes.chave);
-		System.out.println("Chave RSA : " + cripto.rsa.getPublicKey().valorDaChave + " : " + cripto.rsa.getPublicKey().modulo );
-		System.out.println("Chave hmac :" + cripto.chaveHmac);
 	}
 	
 	@Override
