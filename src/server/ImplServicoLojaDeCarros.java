@@ -48,21 +48,12 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		BancoDeDados stub;
 		Veiculo v = (Veiculo) handleRequest(dados,cripto);
 		try {
-			if(usedPort == 0){
-				stub = (BancoDeDados) Naming.lookup("//localhost:2000/BancoDeDados");
+			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
+			if(usedPort == 2000){
 				byte[] dadosNv = stub.add(montarRequest(v,criptoDatabase));
 				Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
-				System.out.println("Printa não é?");
-				System.out.println(nv);
-				System.out.println(cripto.aes.chave);
-				System.out.println(cripto.rsa.getPublicKeyExterna().valorDaChave);
-				System.out.println(cripto.rsa.getPublicKey().valorDaChave);
-				System.out.println(cripto.rsa.getPrivateKey().valorDaChave);
 				return montarRequest(nv,cripto);
 			}
-			System.out.println("PAssou do if");
-			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			
 			BancoDeDados rep2;
 			BancoDeDados rep3;
 			if(usedPort==2001) {
@@ -156,7 +147,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				if(database.get(i).getRenavam().equals(renavam)) {
 					v.setRenavam(renavam);
 					v.setDisponivel(database.get(i).isDisponivel());
-					
+					if(usedPort == 2000){
+						byte[] dadosNv = stub.update(montarRequest(v,criptoDatabase), montarRequest(i,criptoDatabase));
+						Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
+						return montarRequest(nv,cripto);
+					}
 					BancoDeDados rep2;
 					BancoDeDados rep3;
 					if(usedPort==2001) {
@@ -197,8 +192,9 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v)) {
 
-					if(usedPort == 0){
-
+					if(usedPort == 2000){
+						stub.delete(montarRequest(i,criptoDatabase));
+						return montarRequest(true,cripto);
 					}
 
 					BancoDeDados rep2;
@@ -241,7 +237,10 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				if(database.get(i).getRenavam().equals(v) && database.get(i).isDisponivel()) {
 					database.get(i).setDisponivel(false);
 					Veiculo veiculo = database.get(i);
-
+					if(usedPort == 2000){
+						stub.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+						return montarRequest(true,cripto);
+					}
 					BancoDeDados rep2;
 					BancoDeDados rep3;
 					if(usedPort==2001) {

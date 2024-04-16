@@ -65,10 +65,6 @@ public class Attacker {
 						case 1:
 							Veiculo added = adicionarVeiculo();
 							reply = stub.adicionar(montarRequest(added,criptoLoja), connection);
-							System.out.println(criptoLoja.aes.chave);
-							System.out.println(criptoLoja.rsa.getPublicKeyExterna().valorDaChave);
-							System.out.println(criptoLoja.rsa.getPublicKey().valorDaChave);
-							System.out.println(criptoLoja.rsa.getPrivateKey().valorDaChave);
 							Veiculo v = (Veiculo) handleResponse(reply, criptoLoja);
 							System.out.println(v);
 							break;
