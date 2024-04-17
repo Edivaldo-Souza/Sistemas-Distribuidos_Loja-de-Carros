@@ -37,10 +37,11 @@ public class Cripto implements Serializable{
         this.aes = new AES();
         this.rsa = new Rsa();
     }
-    public Cripto(Cripto c) {
-    	this.aes = c.aes;
-    	this.rsa = c.rsa;
-    	this.chaveHmac = c.chaveHmac;
+
+    public Cripto(Cripto c){
+        this.aes = c.aes;
+        this.rsa = c.rsa;
+        this.chaveHmac = c.chaveHmac;
     }
     public byte[] criptografar(Mensagem msg) throws IOException {
         byte[] msgEncriptada = aes.cifrar(Mensagem.serializar(msg));

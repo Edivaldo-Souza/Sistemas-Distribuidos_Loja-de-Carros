@@ -9,7 +9,9 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class Rsa implements Serializable{
+public class Rsa implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private Chave publicKey;
     private Chave privateKey;
     private Chave publicKeyExterna;

@@ -33,6 +33,7 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 	private Cripto cripto;
 	private Cripto criptoDatabase;
 
+
 	public ImplServicoLojaDeCarros() throws UnsupportedEncodingException {
 		this.cripto = new Cripto("kalo54232bcaa111");
 		Chave chavePublica = new Chave();
@@ -40,7 +41,6 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		Chave chavePrivada = new Chave();
 		chavePrivada.modulo = new BigInteger("8909"); chavePrivada.valorDaChave = new BigInteger("1243");
 		this.criptoDatabase = new Cripto("[B@29ca901ejdh1u", chavePublica, chavePrivada);
-
 	}
 
 	@Override
@@ -49,7 +49,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 		Veiculo v = (Veiculo) handleRequest(dados,cripto);
 		try {
 			stub = (BancoDeDados) Naming.lookup("//localhost:"+usedPort+"/BancoDeDados");
-			
+			if(usedPort == 2000){
+				byte[] dadosNv = stub.add(montarRequest(v,criptoDatabase));
+				Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
+				return montarRequest(nv,cripto);
+			}
 			BancoDeDados rep2;
 			BancoDeDados rep3;
 			if(usedPort==2001) {
@@ -143,7 +147,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 				if(database.get(i).getRenavam().equals(renavam)) {
 					v.setRenavam(renavam);
 					v.setDisponivel(database.get(i).isDisponivel());
-					
+					if(usedPort == 2000){
+						byte[] dadosNv = stub.update(montarRequest(v,criptoDatabase), montarRequest(i,criptoDatabase));
+						Veiculo nv = (Veiculo) handleRequest(dadosNv,criptoDatabase);
+						return montarRequest(nv,cripto);
+					}
 					BancoDeDados rep2;
 					BancoDeDados rep3;
 					if(usedPort==2001) {
@@ -183,6 +191,12 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			List<Veiculo> database = (List<Veiculo>) handleRequest(stub.get(),criptoDatabase);
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v)) {
+
+					if(usedPort == 2000){
+						stub.delete(montarRequest(i,criptoDatabase));
+						return montarRequest(true,cripto);
+					}
+
 					BancoDeDados rep2;
 					BancoDeDados rep3;
 					if(usedPort==2001) {
@@ -222,7 +236,11 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 			for(int i = 0; i<database.size(); i++) {
 				if(database.get(i).getRenavam().equals(v) && database.get(i).isDisponivel()) {
 					database.get(i).setDisponivel(false);
-					
+					Veiculo veiculo = database.get(i);
+					if(usedPort == 2000){
+						stub.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+						return montarRequest(true,cripto);
+					}
 					BancoDeDados rep2;
 					BancoDeDados rep3;
 					if(usedPort==2001) {
@@ -237,8 +255,8 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 						rep2 = (BancoDeDados) Naming.lookup("//localhost:2001/BancoDeDados");
 						rep3 = (BancoDeDados) Naming.lookup("//localhost:2002/BancoDeDados");
 					}
-					Veiculo veiculo = database.get(i);
 					stub.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
+
 					rep2.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
 					rep3.update(montarRequest(veiculo,criptoDatabase), montarRequest(i,criptoDatabase));
 					return montarRequest(true,cripto);
@@ -365,8 +383,25 @@ public class ImplServicoLojaDeCarros implements ServicoLojaDeCarros{
 
 	@Override
 	public Cripto getCripto() throws RemoteException {
-		
+		Cripto copia = new Cripto(this.cripto);
+		copia.rsa.setPublicKeyExterna(this.cripto.rsa.getPublicKey());
+		this.cripto.rsa.setPublicKeyExterna(copia.rsa.getPublicKey());
 		return this.cripto;
 	}
-	
+
+
+	public void setCripto(Cripto cripto) {
+		this.cripto = cripto;
+	}
+
+	public Cripto getCriptoDatabase() {
+		return criptoDatabase;
+	}
+
+	public void setCriptoDatabase(Cripto criptoDatabase) {
+		this.criptoDatabase = criptoDatabase;
+	}
+	public void setUsedPort(int port){
+		usedPort = port;
+	}
 }

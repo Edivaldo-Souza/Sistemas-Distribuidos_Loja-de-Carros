@@ -34,7 +34,7 @@ public class Cliente {
 			usedPort = stub.getClientPort();
 			stub.setClientPort(usedPort+1);
 
-			connection = "//"+host+":"+usedPort+"/BancoDeDados";
+			connection = "//"+host+":"+usedPort+"/ServicoLojaDeCarros";
 			
 			// antes do login, ele troca a chave rsa com o serviço de autenticacao
 			criptoAuth.rsa.setPublicKeyExterna(stub.trocaDeChavesRsaAuth(criptoAuth.rsa.getPublicKey()));
@@ -95,26 +95,30 @@ public class Cliente {
 							Veiculo added = adicionarVeiculo();
 							reply = stub.adicionar(montarRequest(added,criptoLoja), connection);
 							Veiculo v = (Veiculo) handleResponse(reply, criptoLoja);
-							System.out.println(v);
+							if(v!=null) {
+								System.out.println(v);
+							}
+							else System.out.println("Requisicao Invalida");
 							break;
 						case 2:
 							temp = buscarVeiculo();
 							cont = 0;
 							reply = stub.buscar(montarRequest(temp,criptoLoja), connection);
 							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
+							if(veiculos==null) {
+								System.out.println("Nenhum correspondencia");
+								break;
+							}
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(c.toString());
-							}
-							if(cont==0) {
-								System.out.println("Nenhum correspondencia");
 							}
 							break;
 						case 3:
 							temp = listarVeiculos();
 							reply = stub.listar(montarRequest(temp,criptoLoja), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
-							if(temp!=null) {
+							if(temp!=null && veiculos!=null) {
 								for(Veiculo d : veiculos) {
 									System.out.println(d.toString());
 								}
@@ -143,6 +147,10 @@ public class Cliente {
 							cont = 0;
 							reply = stub.buscar(montarRequest(temp,criptoLoja), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply, criptoLoja);
+							if(veiculos == null) {
+								System.out.println("Nenhuma correspondencia");
+								break;
+							}
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -171,6 +179,10 @@ public class Cliente {
 							cont = 0;
 							reply = stub.buscar(montarRequest(temp,criptoLoja),connection);
 							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
+							if(veiculos == null) {
+								System.out.println("Nenhuma correspondencia");
+								break;
+							}
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -232,6 +244,10 @@ public class Cliente {
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), connection);
 							List<Veiculo> veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
+							if(veiculos == null) {
+								System.out.println("Nenhuma correspondencia");
+								break;
+							}
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(c.toString());
@@ -246,8 +262,10 @@ public class Cliente {
 								msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 								reply = stub.listar(criptoLoja.criptografar(msg), connection);
 								veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
-								for(Veiculo v : veiculos) {
-									System.out.println(v.toString());
+								if(veiculos!=null) {
+									for(Veiculo v : veiculos) {
+										System.out.println(v.toString());
+									}
 								}
 							}
 							break;
@@ -261,6 +279,10 @@ public class Cliente {
 							msg = new Mensagem(temp, criptoLoja.assinarHash(criptoLoja.hMac(temp)));
 							reply = stub.buscar(criptoLoja.criptografar(msg), connection);
 							veiculos = (List<Veiculo>) handleResponse(reply,criptoLoja);
+							if(veiculos == null) {
+								System.out.println("Nenhuma correspondencia");
+								break;
+							}
 							for(Veiculo c: veiculos) {
 								cont++;
 								System.out.println(cont+"° veiculo: \n"+c.toString());
@@ -451,9 +473,13 @@ public class Cliente {
 		}
 	}
 	public static Object handleResponse(byte[] reply, Cripto cripto) throws Exception {
-		Mensagem msgDecifrada = cripto.descriptografar(reply);
-		autenticar(msgDecifrada,cripto);
-		return msgDecifrada.getMensagem();
+		if(reply!=null) {
+			Mensagem msgDecifrada = cripto.descriptografar(reply);
+			autenticar(msgDecifrada,cripto);
+			return msgDecifrada.getMensagem();
+		}
+		return null;
+		
 	}
 	public static byte[] montarRequest(Object v, Cripto cripto) throws Exception {
 		return cripto.criptografar(new Mensagem(v,cripto.assinarHash(cripto.hMac(v))));

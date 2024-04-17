@@ -12,6 +12,7 @@ import java.rmi.server.UnicastRemoteObject;
 import cripto.Chave;
 import cripto.Cripto;
 import interfaces.Autenticador;
+import interfaces.BancoDeDados;
 import interfaces.ReverseProxy;
 import interfaces.ServicoLojaDeCarros;
 import model.Credenciais;
@@ -30,7 +31,10 @@ public class ImplReverseProxy implements ReverseProxy{
 	
 	public boolean verificarRequisicao(String req) {
 		String temp = req.split(":")[1].split("/")[1];
-		if(temp.equals("ServicoLojaDeCarros")) return true;
+		String port = req.split(":")[1].split("/")[0];
+		
+		if(temp.equals("ServicoLojaDeCarros") && 
+				!port.equals("2000")) return true;
 		else if(temp.equals("BancoDeDados")) return false;
 		else if(temp.equals("ReverseProxy")) return false;
 		else return false;
@@ -70,8 +74,8 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (Exception e) {
             //throw new RuntimeException(e);
         }
-		String reply = "Requisicao_Invalida";
-		return reply.getBytes();
+		System.out.println("Requisicao Bloqueada");
+		return null;
 	}
 
 	@Override
@@ -88,7 +92,7 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (Exception e) {
             throw new RuntimeException(e);
         }
-
+		System.out.println("Requisicao Bloqueada");
         return null;
 	}
 
@@ -108,6 +112,7 @@ public class ImplReverseProxy implements ReverseProxy{
 		} catch (Exception e) {
             throw new RuntimeException(e);
         }
+		System.out.println("Requisicao Bloqueada");
         return null;
 	}
 
@@ -125,14 +130,7 @@ public class ImplReverseProxy implements ReverseProxy{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		String reply = "Requisicao_Invalida";
-		try {
-			System.out.println("Get here");
-			 return cripto.criptografar(new Mensagem(reply,cripto.assinarHash(cripto.hMac(reply))));
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		System.out.println("Requisicao Bloqueada");
 		return null;
 	}
 
@@ -197,18 +195,24 @@ public class ImplReverseProxy implements ReverseProxy{
 		try {
 			ImplReverseProxy refObjRemoto = new ImplReverseProxy();
 			ImplAutenticador refObjRemotoAuth = new ImplAutenticador();
+			ImplBancoDeDados bd = new ImplBancoDeDados();
 			ImplServicoLojaDeCarros refObjRemotoLoja = new ImplServicoLojaDeCarros();
+			refObjRemotoLoja.setUsedPort(2000);
+			refObjRemotoLoja.setCriptoDatabase(bd.getCripto());
+			refObjRemotoLoja.getCriptoDatabase().rsa.setPublicKeyExterna(bd.getCripto().rsa.getPublicKey());
+			bd.getCripto().rsa.setPublicKeyExterna(refObjRemotoLoja.getCriptoDatabase().rsa.getPublicKey());
 			ReverseProxy skeleton = (ReverseProxy) UnicastRemoteObject.exportObject(refObjRemoto, 0);
 			Autenticador skeletonAuth = (Autenticador) UnicastRemoteObject.exportObject(refObjRemotoAuth,8000);
 			ServicoLojaDeCarros skeletonLoja = 
 					(ServicoLojaDeCarros) UnicastRemoteObject.exportObject(refObjRemotoLoja,8001);
-			
+			BancoDeDados skeletonBD =
+					(BancoDeDados) UnicastRemoteObject.exportObject(bd,8099);
 			LocateRegistry.createRegistry(2000);
 			Registry reg = LocateRegistry.getRegistry(2000);
 			reg.bind("ReverseProxy", skeleton);
 			reg.bind("Autenticador", skeletonAuth);
 			reg.bind("ServicoLojaDeCarros", skeletonLoja);
-			
+			reg.bind("BancoDeDados", skeletonBD);
 		} catch (Exception e) {
 			System.err.println("Servidor: " + e.toString());
 			e.printStackTrace();
